@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id              String   @id @default(uuid())
+  name            String
+  shortName       String   @unique
+  logoUrl         String?
+  isInternational Boolean  @default(false)
+  pilots          Pilot[]
+  news            News[]
+  results         Result[]
+
+  @@map("categories")
+}
+
+model Pilot {
+  id                 String   @id @default(uuid())
+  fullName           String
+  slug               String   @unique
+  categoryId         String
+  category           Category @relation(fields: [categoryId], references: [id])
+  nationality        String   @default("Argentina")
+  bio                String?
+  height             Float?
+  dateOfBirth        DateTime?
+  profileImageUrl    String?
+  isActive           Boolean  @default(true)
+  socialMediaHandles String?  // Stored as JSON string
+  
+  news               News[]
+  results            Result[]
+  followers          Follow[]
+
+  @@map("pilots")
+}
+
+model News {
+  id           String    @id @default(uuid())
+  title        String
+  summary      String?
+  originalUrl  String    @unique
+  sourceName   String
+  publishedAt  DateTime  @default(now())
+  imageUrl     String?
+  
+  pilotId      String?
+  pilot        Pilot?    @relation(fields: [pilotId], references: [id])
+  
+  categoryId   String?
+  category     Category? @relation(fields: [categoryId], references: [id])
+
+  @@map("news")
+}
+
+model Result {
+  id          String   @id @default(uuid())
+  pilotId     String
+  pilot       Pilot    @relation(fields: [pilotId], references: [id])
+  
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  
+  eventName   String
+  sessionType String   // e.g. "Race", "Qualifying"
+  position    Int
+  timeGap     String?
+  eventDate   DateTime
+
+  @@map("results")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  
+  follows   Follow[]
+
+  @@map("users")
+}
+
+model Follow {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  pilotId   String
+  pilot     Pilot    @relation(fields: [pilotId], references: [id])
+  
+  createdAt DateTime @default(now())
+
+  @@id([userId, pilotId])
+  @@map("follows")
+}
