@@ -21,7 +21,8 @@ export default async function NewsPage() {
         publishedAt: new Date(n.publishedAt).toLocaleDateString(),
         imageUrl: n.imageUrl || "/placeholder.svg",
         category: n.category?.shortName || "General",
-        relatedPilot: n.pilot?.fullName
+        relatedPilot: n.pilot?.fullName,
+        originalUrl: n.originalUrl
     }));
 
     return (

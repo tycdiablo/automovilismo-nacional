@@ -1,8 +1,6 @@
 import { Search } from "lucide-react";
 import { PilotCard } from "@/components/pilots/PilotCard";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
-import { Pilot } from "@/lib/data/pilots"; // Keeping the type for now or redefine
 
 export default async function PilotsPage({
     searchParams,
@@ -28,8 +26,8 @@ export default async function PilotsPage({
     const mappedPilots = pilots.map(p => ({
         id: p.id,
         name: p.fullName,
-        category: p.category.name,
-        team: "Unknown", // Schema doesn't have team yet
+        category: p.category.shortName,
+        team: p.category.name, // Use category name as "team" for now or just the category
         nationality: p.nationality,
         imageUrl: p.profileImageUrl || "/placeholder.svg",
         isInternational: p.category.isInternational
