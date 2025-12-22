@@ -101,7 +101,7 @@ export default async function Home() {
         <div className="rounded-xl bg-card p-6 border border-border shadow-sm">
           <h2 className="text-lg font-semibold mb-4">Talentos para seguir</h2>
           <div className="space-y-4">
-            {featuredPilots.map((pilot: { id: string, fullName: string, category: { name: string } }) => (
+            {featuredPilots.map((pilot: { id: string, fullName: string, category: { shortName: string } }) => (
               <div key={pilot.id} className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
                   {pilot.fullName.charAt(0)}
