@@ -142,7 +142,7 @@ export default async function Home() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {latestNews.map((news: { id: string, title: string, publishedAt: Date, imageUrl: string | null, category: { shortName: string } | null }) => (
+          {latestNews.map((news: { id: string, title: string, summary: string | null, publishedAt: Date, imageUrl: string | null, originalUrl: string, category: { shortName: string } | null }) => (
             <article
               key={news.id}
               className="group relative flex flex-col items-start bg-card rounded-xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-shadow"
