@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, Newspaper, Trophy, Settings, LogOut } from "lucide-react";
+import { Home, Users, Newspaper, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [

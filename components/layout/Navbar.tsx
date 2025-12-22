@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, Search, Menu } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 import { ModeToggle } from "@/components/mode-toggle";
 
 export function Navbar() {

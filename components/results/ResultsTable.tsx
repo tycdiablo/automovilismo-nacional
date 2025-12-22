@@ -1,4 +1,4 @@
-import { Trophy, Clock, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 
 type Result = {
     id: string;
@@ -54,9 +54,9 @@ export function ResultsTable({ results, title }: ResultsTableProps) {
                                 <td className="px-4 py-3 font-medium">{res.pilotName}</td>
                                 <td className="px-4 py-3 text-center">
                                     <div className={`inline-flex items-center justify-center h-7 w-7 rounded-full font-bold text-xs ${res.position === 1 ? 'bg-yellow-400/20 text-yellow-600 border border-yellow-400/50' :
-                                            res.position === 2 ? 'bg-slate-300/20 text-slate-600 border border-slate-300/50' :
-                                                res.position === 3 ? 'bg-amber-700/20 text-amber-700 border border-amber-700/50' :
-                                                    'bg-muted text-muted-foreground'
+                                        res.position === 2 ? 'bg-slate-300/20 text-slate-600 border border-slate-300/50' :
+                                            res.position === 3 ? 'bg-amber-700/20 text-amber-700 border border-amber-700/50' :
+                                                'bg-muted text-muted-foreground'
                                         }`}>
                                         {res.position}
                                     </div>

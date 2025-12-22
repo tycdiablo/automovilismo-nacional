@@ -3,10 +3,10 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const pilotId = params.id
+        const { id: pilotId } = await params
         const { following } = await request.json()
 
         // Since we don't have real Auth yet, we use a constant "guest" user ID

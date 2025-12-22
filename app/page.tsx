@@ -1,4 +1,4 @@
-import { ArrowRight, Calendar, Clock, Trophy } from "lucide-react";
+import { ArrowRight, Calendar, Clock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -100,7 +100,7 @@ export default async function Home() {
         <div className="rounded-xl bg-card p-6 border border-border shadow-sm">
           <h2 className="text-lg font-semibold mb-4">Talentos para seguir</h2>
           <div className="space-y-4">
-            {featuredPilots.map((pilot: any) => (
+            {featuredPilots.map((pilot) => (
               <div key={pilot.id} className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
                   {pilot.fullName.charAt(0)}
@@ -141,7 +141,7 @@ export default async function Home() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {latestNews.map((news: any) => (
+          {latestNews.map((news) => (
             <article
               key={news.id}
               className="group relative flex flex-col items-start bg-card rounded-xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-shadow"
