@@ -1,7 +1,7 @@
 "use client";
 
 import { UserPlus, UserCheck } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface PilotCardProps {
     pilot: {
@@ -17,12 +17,42 @@ interface PilotCardProps {
 
 export function PilotCard({ pilot }: PilotCardProps) {
     const [isFollowing, setIsFollowing] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Sync with localStorage since we don't have full auth yet
+    useEffect(() => {
+        const stored = localStorage.getItem(`follow_${pilot.id}`);
+        if (stored === 'true') setIsFollowing(true);
+    }, [pilot.id]);
+
+    const handleFollow = async () => {
+        const newStatus = !isFollowing;
+        setIsFollowing(newStatus);
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/pilotos/${pilot.id}/follow`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ following: newStatus })
+            });
+            if (response.ok) {
+                localStorage.setItem(`follow_${pilot.id}`, newStatus ? 'true' : 'false');
+            } else {
+                throw new Error("Failed to update follow status");
+            }
+        } catch (e) {
+            console.error("Error following:", e);
+            setIsFollowing(!newStatus); // Rollback
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow">
-            <div className="aspect-square bg-muted relative overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-muted-foreground/30">
-                    {pilot.name.charAt(0)}
+            <div className="aspect-square bg-muted relative overflow-hidden flex items-center justify-center">
+                <div className="text-3xl font-bold text-muted-foreground/40 select-none">
+                    {pilot.name.split(' ').map(n => n[0]).join('')}
                 </div>
 
                 {pilot.imageUrl && pilot.imageUrl !== "/placeholder.svg" && (
@@ -50,25 +80,15 @@ export function PilotCard({ pilot }: PilotCardProps) {
 
                 <div className="mt-4 flex items-center justify-between">
                     <button
-                        onClick={async () => {
-                            const newStatus = !isFollowing;
-                            setIsFollowing(newStatus);
-                            try {
-                                await fetch(`/api/pilotos/${pilot.id}/follow`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ following: newStatus })
-                                });
-                            } catch (e) {
-                                console.error("Error following:", e);
-                                setIsFollowing(!newStatus); // Rollback
-                            }
-                        }}
+                        onClick={handleFollow}
+                        disabled={isLoading}
                         className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border h-9 px-4 py-2 w-full gap-2 ${isFollowing
                             ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
                             : 'border-input bg-background hover:bg-accent hover:text-accent-foreground'
                             }`}>
-                        {isFollowing ? (
+                        {isLoading ? (
+                            <span className="animate-pulse">...</span>
+                        ) : isFollowing ? (
                             <>
                                 <UserCheck className="h-4 w-4" />
                                 Siguiendo

@@ -13,7 +13,12 @@ const SOURCES = [
     { name: 'Mundo Sport', url: 'https://mundosport.com/' },
     { name: 'Pole Position', url: 'https://polepositionweb.net/' },
     { name: 'Infobae Deportes', url: 'https://www.infobae.com/deportes/automovilismo/' },
-    { name: 'Clarín Autos', url: 'https://www.clarin.com/deportes/polideportivo/automovilismo/' }
+    { name: 'Clarín Autos', url: 'https://www.clarin.com/deportes/polideportivo/automovilismo/' },
+    { name: 'TC La Revista', url: 'https://tclarevista.com.ar/' },
+    { name: 'La Cuadriculada', url: 'https://lacuadriculada.com.ar/' },
+    { name: 'Revista Solo Auto', url: 'https://solomoto.es/automovilismo/' },
+    { name: 'Pueblo de Pilotos', url: 'https://pueblodepilotos.com/' },
+    { name: 'Vértigo Motor', url: 'https://vertigomotor.com.ar/' }
 ];
 
 const PILOTS = [
@@ -25,74 +30,114 @@ const PILOTS = [
     'Nicolás Fuca', 'Simón Bulbarella', 'Luis Perez Companc', 'Patricio Perez Companc',
     'Germán Todino', 'Diego Ciantini', 'Patricio Di Palma', 'Josito Di Palma',
     'Emiliano Spataro', 'Christian Ledesma', 'Juan Cruz Benvenuti', 'Manu Urcera',
-    'Jonatan Castellano', 'Mauricio Lambiris', 'Nicolás Trosset'
+    'Jonatan Castellano', 'Mauricio Lambiris', 'Nicolás Trosset', 'Andrés Jakos',
+    'Marcos Quijada', 'Otto Fritzler', 'Santiago Mangoni', 'Valentín Aguirre',
+    'Juan Bautista De Benedictis', 'Gastón Mazzacane', 'Santiago Álvarez', 'Marcos Landa',
+    'Ricardo Risatti', 'Gabriel Ponce de León', 'Nicolás Bonelli', 'Juan José Ebarlín',
+    'Ignacio Montenegro', 'Bernardo Llaver', 'Fabricio Persia', 'Jorge Barrio',
+    'Damián Fineschi', 'Marcelo Ciarrocchi', 'Kevin Felippo'
+];
+
+const KEYWORDS = [
+    'Turismo Carretera', 'TC2000', 'Top Race', 'Turismo Nacional', 'ACTC',
+    'Fórmula 1', 'IndyCar', 'WEC', 'TCR World Tour', 'TCR South America',
+    'Fórmula Nacional', 'TC Pick Up', 'TC Pista', 'TN Clase 3', 'TN Clase 2',
+    'Automovilismo Argentino'
 ];
 
 function decodeHtml(html) {
+    if (!html) return '';
     return html
         .replace(/&quot;/g, '"')
         .replace(/&amp;/g, '&')
         .replace(/&rsquo;/g, "'")
+        .replace(/&lsquo;/g, "'")
+        .replace(/&ldquo;/g, '"')
+        .replace(/&rdquo;/g, '"')
         .replace(/&nbsp;/g, ' ')
         .replace(/&#8220;/g, '"')
         .replace(/&#8221;/g, '"')
         .replace(/&#8216;/g, "'")
         .replace(/&#8217;/g, "'")
-        .replace(/<[^>]*>/g, ''); // Remove any leftover tags
+        .replace(/&#039;/g, "'")
+        .replace(/&iacute;/g, 'í')
+        .replace(/&aacute;/g, 'á')
+        .replace(/&eacute;/g, 'é')
+        .replace(/&oacute;/g, 'ó')
+        .replace(/&uacute;/g, 'ú')
+        .replace(/&ntilde;/g, 'ñ')
+        .replace(/&Iacute;/g, 'Í')
+        .replace(/&Aacute;/g, 'Á')
+        .replace(/&Eacute;/g, 'É')
+        .replace(/&Oacute;/g, 'Ó')
+        .replace(/&Uacute;/g, 'Ú')
+        .replace(/&Ntilde;/g, 'Ñ')
+        .replace(/<[^>]*>/g, '') // Remove any leftover tags
+        .trim();
 }
 
 async function scrapeSource(source) {
     console.log(`🔍 Scraping ${source.name}...`);
     try {
-        const response = await fetch(source.url);
+        const response = await fetch(source.url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        });
         const html = await response.text();
 
         const news = [];
-        // Improved regex to find titles and potential links
-        // We look for patterns like <h2 class="..."> <a href="..."> TITLE </a> </h2>
-        const blockRegex = /<(h[23]|a)[^>]*(?:href=["']([^"']+)["'])?[^>]*>([\s\S]*?)<\/\1>/gi;
+        const blockRegex = /<(h[123]|a)[^>]*(?:href=["']([^"']+)["'])?[^>]*>([\s\S]*?)<\/\1>/gi;
 
         let match;
         while ((match = blockRegex.exec(html)) !== null) {
             let potentialLink = match[2];
             let rawContent = match[3];
 
-            // If the content itself has a link, try to extract it
             const innerLink = /href=["']([^"']+)["']/i.exec(rawContent);
             if (innerLink) potentialLink = innerLink[1];
 
-            const cleanTitle = decodeHtml(rawContent).trim();
+            const cleanTitle = decodeHtml(rawContent);
 
-            if (cleanTitle.length > 20) { // Filter out short fragments
+            if (cleanTitle.length > 25 && cleanTitle.length < 200) {
                 const mentionedPilots = PILOTS.filter(p => cleanTitle.toLowerCase().includes(p.toLowerCase()));
+                const mentionedKeywords = KEYWORDS.filter(k => cleanTitle.toLowerCase().includes(k.toLowerCase()));
 
-                if (mentionedPilots.length > 0) {
-                    // Normalize link
+                if (mentionedPilots.length > 0 || mentionedKeywords.length > 0) {
                     let newsUrl = potentialLink || source.url;
                     if (newsUrl.startsWith('/')) {
                         const base = new URL(source.url);
                         newsUrl = `${base.protocol}//${base.host}${newsUrl}`;
+                    } else if (!newsUrl.startsWith('http')) {
+                        const base = new URL(source.url);
+                        newsUrl = `${base.protocol}//${base.host}/${newsUrl}`;
+                    }
+
+                    if (newsUrl === source.url || newsUrl.endsWith('/category/noticias/') || newsUrl.length < source.url.length + 5) {
+                        continue;
                     }
 
                     news.push({
                         title: cleanTitle,
-                        summary: `Últimas novedades sobre ${mentionedPilots.join(', ')} en ${source.name}.`,
+                        summary: `Últimas novedades sobre ${mentionedPilots.concat(mentionedKeywords).join(', ')} en ${source.name}.`,
                         url: newsUrl,
                         source: source.name,
                         pilotNames: mentionedPilots,
+                        categoryName: mentionedKeywords[0] || null,
                         publishedAt: new Date().toISOString()
                     });
                 }
             }
         }
 
-        // Remove duplicates within the same source
         const uniqueNews = [];
         const seenTitles = new Set();
+        const seenUrls = new Set();
         for (const n of news) {
-            if (!seenTitles.has(n.title)) {
+            if (!seenTitles.has(n.title.toLowerCase()) && !seenUrls.has(n.url)) {
                 uniqueNews.push(n);
-                seenTitles.add(n.title);
+                seenTitles.add(n.title.toLowerCase());
+                seenUrls.add(n.url);
             }
         }
 
@@ -115,11 +160,12 @@ async function run() {
         allNews.push(...newsItems);
     }
 
-    // Limit to avoid spamming the webhook in one go, but ensure we have enough
-    const limitedNews = allNews.slice(0, 50);
+    const shuffledNews = allNews.sort(() => 0.5 - Math.random());
+    const limitedNews = shuffledNews.slice(0, 100);
 
     console.log(`📊 Found ${allNews.length} candidate articles. Sending ${limitedNews.length} to database.`);
 
+    let successCount = 0;
     for (const item of limitedNews) {
         try {
             const response = await fetch(WEBHOOK_URL, {
@@ -132,16 +178,13 @@ async function run() {
             });
             const result = await response.json();
             if (result.success) {
+                successCount++;
                 console.log(`✅ Posted: ${item.title}`);
-            } else {
-                // Silently skip duplicates/exists
             }
-        } catch (error) {
-            console.error(`❌ Error posting ${item.title}:`, error.message);
-        }
+        } catch (error) { }
     }
 
-    console.log('🚀 Finalizado.');
+    console.log(`🚀 Finalizado. Se procesaron ${successCount} noticias nuevas.`);
 }
 
 run();
