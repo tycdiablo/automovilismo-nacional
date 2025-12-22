@@ -1,4 +1,4 @@
-import fetch from 'node-fetch'; // We'll add this to package.json or use global fetch if Node 18+
+// Native fetch is available in Node 18+
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL + '/api/news/webhook';
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
