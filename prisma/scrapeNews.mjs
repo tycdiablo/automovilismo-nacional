@@ -110,7 +110,9 @@ async function scrapeSource(source) {
                         newsUrl = `${base.protocol}//${base.host}${newsUrl}`;
                     } else if (!newsUrl.startsWith('http')) {
                         const base = new URL(source.url);
-                        newsUrl = `${base.protocol}//${base.host}/${newsUrl}`;
+                        // Ensure there's a slash between host and path
+                        const host = base.host.endsWith('/') ? base.host : base.host + '/';
+                        newsUrl = `${base.protocol}//${host}${newsUrl}`;
                     }
 
                     if (newsUrl === source.url || newsUrl.endsWith('/category/noticias/') || newsUrl.length < source.url.length + 5) {
