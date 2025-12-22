@@ -1,0 +1,25 @@
+name: Scrape News
+
+on:
+  schedule:
+    - cron: '0 */2 * * *' # Every 2 hours
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout news
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Scraper
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }} # You'll set this in GitHub Secrets
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }} # You'll set this in GitHub Secrets
+        run: |
+          node prisma/scrapeNews.mjs
