@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Navbar } from "@/components/layout/Navbar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LayoutShell } from "@/components/layout/LayoutShell";
 
 export const metadata: Metadata = {
   title: "Automovilismo Nacional",
@@ -23,20 +22,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex h-full">
-            {/* Desktop Sidebar */}
-            <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-              <Sidebar />
-            </div>
-
-            <div className="lg:pl-64 flex flex-col min-h-screen w-full">
-              <Navbar />
-
-              <main className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
-                {children}
-              </main>
-            </div>
-          </div>
+          <LayoutShell>
+            {children}
+          </LayoutShell>
         </ThemeProvider>
       </body>
     </html>

@@ -1,0 +1,79 @@
+[
+    {
+        "fullName": "Julián Santero",
+        "slug": "julian-santero",
+        "category": "TC",
+        "nationality": "Argentina",
+        "imageUrl": "https://actc.org.ar/upload/autos/9590/imgs_v3/imgtorso/podio/julian_santero.png"
+    },
+    {
+        "fullName": "Mariano Werner",
+        "slug": "mariano-werner",
+        "category": "TC",
+        "nationality": "Argentina",
+        "imageUrl": "https://actc.org.ar/upload/autos/9593/imgs_v3/imgtorso/podio/mariano_werner.png"
+    },
+    {
+        "fullName": "Agustín Canapino",
+        "slug": "agustin-canapino",
+        "category": "TC",
+        "nationality": "Argentina",
+        "imageUrl": "https://actc.org.ar/upload/autos/9642/imgs_v3/imgtorso/podio/agustin_canapino.png"
+    },
+    {
+        "fullName": "Franco Colapinto",
+        "slug": "franco-colapinto",
+        "category": "F1",
+        "nationality": "Argentina",
+        "imageUrl": "https://www.formulaonehistory.com/wp-content/uploads/2024/08/Franco-Colapinto-Alpine-2025.webp"
+    },
+    {
+        "fullName": "José María López",
+        "slug": "pechito-lopez",
+        "category": "WEC",
+        "nationality": "Argentina",
+        "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQbBCM8aMpA_E0BseIRj3T6Xueu-sraHdDw0g&s"
+    },
+    {
+        "fullName": "Diego Ciantini",
+        "slug": "diego-ciantini",
+        "category": "TC",
+        "nationality": "Argentina",
+        "imageUrl": "https://actc.org.ar/upload/autos/9592/imgs_v3/imgtorso/podio/diego_ciantini.png"
+    },
+    {
+        "fullName": "Mauricio Lambiris",
+        "slug": "mauricio-lambiris",
+        "category": "TC",
+        "nationality": "Argentina",
+        "imageUrl": "https://actc.org.ar/tc/pilotos/2025/mauricio-lambiris_9591.html"
+    },
+    {
+        "fullName": "Matías Rossi",
+        "slug": "matias-rossi",
+        "category": "TC",
+        "nationality": "Argentina",
+        "imageUrl": "https://actc.org.ar/upload/autos/9654/imgs_v3/imgtorso/podio/matias_rossi.png"
+    },
+    {
+        "fullName": "Germán Todino",
+        "slug": "german-todino",
+        "category": "TC",
+        "nationality": "Argentina",
+        "imageUrl": "https://actc.org.ar/upload/autos/9626/imgs_v3/imgtorso/podio/german_todino.png"
+    },
+    {
+        "fullName": "Facundo Ardusso",
+        "slug": "facundo-ardusso",
+        "category": "TC",
+        "nationality": "Argentina",
+        "imageUrl": "https://actc.org.ar/upload/autos/9641/imgs_v3/imgtorso/podio/facundo_ardusso.png"
+    },
+    {
+        "fullName": "Leonel Pernía",
+        "slug": "leonel-pernia",
+        "category": "TC2000",
+        "nationality": "Argentina",
+        "imageUrl": "https://actc.org.ar/upload/autos/3593/imgs_v3/imgcuerpoentero/leonel-pernia.png"
+    }
+]

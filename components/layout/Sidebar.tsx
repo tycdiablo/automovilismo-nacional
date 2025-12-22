@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Home, Users, Newspaper, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navigation = [
+export const navigation = [
     { name: "Inicio", href: "/", icon: Home },
     { name: "Pilotos", href: "/pilotos", icon: Users },
     { name: "Noticias", href: "/noticias", icon: Newspaper },

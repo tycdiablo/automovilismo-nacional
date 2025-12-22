@@ -8,12 +8,18 @@ import Link from "next/link";
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  // 1. Fetch Latest Activity (Result)
-  const latestResult = await prisma.result.findFirst({
-    orderBy: { eventDate: 'desc' },
+  // 1. Fetch Latest Race Event
+  const latestEvent = await prisma.raceEvent.findFirst({
+    orderBy: { date: 'desc' },
     include: {
-      pilot: true,
       category: true,
+      results: {
+        orderBy: { position: 'asc' },
+        take: 3,
+        include: {
+          pilot: true,
+        }
+      }
     },
   });
 
@@ -49,51 +55,49 @@ export default async function Home() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Live / Featured Widget */}
-        {latestResult ? (
+        {latestEvent ? (
           <div className="col-span-full lg:col-span-2 rounded-xl bg-card p-6 border border-border shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                 </span>
-                Actividad Reciente
+                Última Competencia: {latestEvent.name}
               </h2>
               <span className="text-sm text-muted-foreground">
-                {formatDistanceToNow(new Date(latestResult.eventDate), { addSuffix: true, locale: es })}
+                {formatDistanceToNow(new Date(latestEvent.date), { addSuffix: true, locale: es })}
               </span>
             </div>
 
-            <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-background border border-border flex items-center justify-center overflow-hidden">
-                  <span className="font-bold text-primary">
-                    {latestResult.pilot.fullName.split(' ').map((n: string) => n[0]).join('')}
-                  </span>
+            <div className="space-y-3">
+              {latestEvent.results.map((res: { id: string; position: number; pilotFlag: string | null; pilot: { fullName: string; nationality: string } | null; pilotName: string | null; timeGap: string | null }) => (
+                <div key={res.id} className="bg-muted/30 rounded-lg p-3 border border-border/50 flex items-center gap-4 transition-colors hover:bg-muted/50">
+                  <div className="w-8 font-bold text-lg text-primary">P{res.position}</div>
+                  <div className="flex-1 flex items-center gap-3">
+                    <span className="text-xl">{res.pilotFlag || (res.pilot?.nationality === 'Argentina' ? '🇦🇷' : '🏁')}</span>
+                    <div>
+                      <p className="font-semibold text-sm">{res.pilotName || res.pilot?.fullName}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-tight">{latestEvent.category.shortName}</p>
+                    </div>
+                  </div>
+                  <div className="text-right text-xs font-mono text-muted-foreground">
+                    {res.timeGap || "-"}
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground">{latestResult.pilot.fullName}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {latestResult.category.name} - {latestResult.eventName}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold font-mono">P{latestResult.position}</p>
-                  <p className="text-xs text-muted-foreground font-medium">{latestResult.timeGap}</p>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-                <Clock className="w-3 h-3" />
-                <span>{latestResult.sessionType}</span>
-                <span className="mx-1">•</span>
-                <Calendar className="w-3 h-3" />
-                <span>{new Date(latestResult.eventDate).toLocaleDateString()}</span>
-              </div>
+              ))}
             </div>
+
+            <Link
+              href="/resultados"
+              className="mt-4 block text-center text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              Ver clasificación completa
+            </Link>
           </div>
         ) : (
           <div className="col-span-full lg:col-span-2 rounded-xl bg-card p-6 border border-border shadow-sm flex items-center justify-center text-muted-foreground">
-            No hay actividad reciente registrada.
+            No hay eventos recientes registrados.
           </div>
         )}
 

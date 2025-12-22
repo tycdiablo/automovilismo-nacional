@@ -4,10 +4,18 @@ import { Bell, Search, Menu } from "lucide-react";
 
 import { ModeToggle } from "@/components/mode-toggle";
 
-export function Navbar() {
+interface NavbarProps {
+    onOpenMenu: () => void;
+}
+
+export function Navbar({ onOpenMenu }: NavbarProps) {
     return (
         <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card/80 px-6 shadow-sm backdrop-blur-md">
-            <button type="button" className="-m-2.5 p-2.5 text-muted-foreground lg:hidden">
+            <button
+                type="button"
+                className="-m-2.5 p-2.5 text-muted-foreground lg:hidden"
+                onClick={onOpenMenu}
+            >
                 <span className="sr-only">Abrir menú</span>
                 <Menu aria-hidden="true" className="h-6 w-6" />
             </button>

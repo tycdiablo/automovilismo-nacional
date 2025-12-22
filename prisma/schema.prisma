@@ -8,70 +8,93 @@ datasource db {
 }
 
 model Category {
-  id              String   @id @default(uuid())
+  id              String      @id @default(uuid())
   name            String
-  shortName       String   @unique
+  shortName       String      @unique
   logoUrl         String?
-  isInternational Boolean  @default(false)
+  isInternational Boolean     @default(false)
   pilots          Pilot[]
   news            News[]
+  raceEvents      RaceEvent[]
   results         Result[]
 
   @@map("categories")
 }
 
 model Pilot {
-  id                 String   @id @default(uuid())
+  id                 String    @id @default(uuid())
   fullName           String
-  slug               String   @unique
+  slug               String    @unique
   categoryId         String
-  category           Category @relation(fields: [categoryId], references: [id])
-  nationality        String   @default("Argentina")
+  category           Category  @relation(fields: [categoryId], references: [id])
+  nationality        String    @default("Argentina")
   bio                String?
   height             Float?
   dateOfBirth        DateTime?
   profileImageUrl    String?
-  isActive           Boolean  @default(true)
-  socialMediaHandles String?  // Stored as JSON string
-  
-  news               News[]
-  results            Result[]
-  followers          Follow[]
+  isActive           Boolean   @default(true)
+  socialMediaHandles String? // Stored as JSON string
+
+  news      News[]
+  results   Result[]
+  followers Follow[]
 
   @@map("pilots")
 }
 
 model News {
-  id           String    @id @default(uuid())
-  title        String
-  summary      String?
-  originalUrl  String    @unique
-  sourceName   String
-  publishedAt  DateTime  @default(now())
-  imageUrl     String?
-  
-  pilotId      String?
-  pilot        Pilot?    @relation(fields: [pilotId], references: [id])
-  
-  categoryId   String?
-  category     Category? @relation(fields: [categoryId], references: [id])
+  id          String   @id @default(uuid())
+  title       String
+  summary     String?
+  originalUrl String   @unique
+  sourceName  String
+  publishedAt DateTime @default(now())
+  imageUrl    String?
+
+  pilotId String?
+  pilot   Pilot?  @relation(fields: [pilotId], references: [id])
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
 
   @@map("news")
 }
 
-model Result {
+model RaceEvent {
   id          String   @id @default(uuid())
-  pilotId     String
-  pilot       Pilot    @relation(fields: [pilotId], references: [id])
-  
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  
-  eventName   String
-  sessionType String   // e.g. "Race", "Qualifying"
-  position    Int
-  timeGap     String?
-  eventDate   DateTime
+  name        String
+  description String?
+  location    String?
+  date        DateTime
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  results Result[]
+
+  @@map("race_events")
+}
+
+model Result {
+  id       String  @id @default(uuid())
+  position Int
+  timeGap  String?
+  points   Float?
+
+  // Tracked Pilot (optional for full tables)
+  pilotId String?
+  pilot   Pilot?  @relation(fields: [pilotId], references: [id])
+
+  // External Pilot Data
+  pilotName String?
+  pilotFlag String? // Country code or emoji
+
+  raceEventId String
+  raceEvent   RaceEvent @relation(fields: [raceEventId], references: [id])
+
+  // For backward compatibility / easier querying
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
 
   @@map("results")
 }
@@ -80,19 +103,19 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   createdAt DateTime @default(now())
-  
-  follows   Follow[]
+
+  follows Follow[]
 
   @@map("users")
 }
 
 model Follow {
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  
-  pilotId   String
-  pilot     Pilot    @relation(fields: [pilotId], references: [id])
-  
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  pilotId String
+  pilot   Pilot  @relation(fields: [pilotId], references: [id])
+
   createdAt DateTime @default(now())
 
   @@id([userId, pilotId])

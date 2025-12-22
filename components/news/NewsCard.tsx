@@ -11,7 +11,7 @@ interface NewsCardProps {
         imageUrl: string;
         category: string;
         relatedPilot?: string;
-        originalUrl?: string; // Add this if available in mapping
+        originalUrl?: string;
     };
 }
 
@@ -20,8 +20,8 @@ export function NewsCard({ news }: NewsCardProps) {
 
     return (
         <article className="flex flex-col overflow-hidden rounded-xl bg-card border border-border shadow-sm transition-all hover:shadow-md h-full">
-            <div className="aspect-video w-full bg-muted relative overflow-hidden group">
-                <div className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-muted-foreground/30">
+            <div className="aspect-video w-full bg-muted relative overflow-hidden group flex items-center justify-center">
+                <div className="text-4xl font-bold text-muted-foreground/30">
                     {news.category.charAt(0)}
                 </div>
 
