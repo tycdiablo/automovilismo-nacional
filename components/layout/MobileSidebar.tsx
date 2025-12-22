@@ -13,8 +13,12 @@ interface MobileSidebarProps {
     onClose: () => void;
 }
 
+import { useSession, signOut } from "next-auth/react";
+import { LogOut, User as UserIcon, LogIn } from "lucide-react";
+
 export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     const pathname = usePathname();
+    const { data: session } = useSession();
 
     // Close sidebar when clicking a link
     useEffect(() => {
@@ -55,7 +59,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                         className="fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border p-6 shadow-xl lg:hidden flex flex-col"
                     >
                         <div className="flex items-center justify-between mb-8">
-                            <Link href="/" className="flex items-center gap-2">
+                            <Link href="/" className="flex items-center gap-2" onClick={onClose}>
                                 <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                                     AN
                                 </h1>
@@ -93,15 +97,47 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                         </nav>
 
                         <div className="pt-6 border-t border-border mt-auto">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                                    U
+                            {session ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                                            {session.user?.name?.[0].toUpperCase() || "U"}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-foreground truncate">{session.user?.name}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{session.user?.email}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            signOut();
+                                            onClose();
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 border border-border rounded-lg transition-all"
+                                    >
+                                        <LogOut className="h-4 w-4" />
+                                        Cerrar sesión
+                                    </button>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-foreground truncate">Usuario</p>
-                                    <p className="text-xs text-muted-foreground truncate">Mi perfil</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    <Link
+                                        href="/login"
+                                        onClick={onClose}
+                                        className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-primary text-primary-foreground text-sm font-bold rounded-lg hover:bg-primary/90 transition-all shadow-md shadow-primary/10"
+                                    >
+                                        <LogIn className="h-4 w-4" />
+                                        Ingresar a mi cuenta
+                                    </Link>
+                                    <Link
+                                        href="/registro"
+                                        onClick={onClose}
+                                        className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all"
+                                    >
+                                        ¿No tienes cuenta? Regístrate
+                                    </Link>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </motion.div>
                 </>

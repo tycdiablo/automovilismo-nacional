@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Seguí a los pilotos argentinos por el mundo.",
 };
 
+import { AuthProvider } from "@/components/providers/AuthProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -18,13 +20,15 @@ export default function RootLayout({
       <body className="h-full">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
-          <LayoutShell>
-            {children}
-          </LayoutShell>
+          <AuthProvider>
+            <LayoutShell>
+              {children}
+            </LayoutShell>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -9,11 +9,14 @@ interface LayoutShellProps {
     children: React.ReactNode;
 }
 
+import { PushNotificationManager } from "@/components/notifications/PushNotificationManager";
+
 export function LayoutShell({ children }: LayoutShellProps) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
         <div className="flex h-full">
+            <PushNotificationManager />
             {/* Desktop Sidebar */}
             <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
                 <Sidebar />

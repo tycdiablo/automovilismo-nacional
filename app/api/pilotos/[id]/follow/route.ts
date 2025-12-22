@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
+
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -8,45 +11,40 @@ export async function POST(
     try {
         const { id: pilotId } = await params
         const { following } = await request.json()
+        const session = await getServerSession(authOptions)
 
-        // Since we don't have real Auth yet, we use a constant "guest" user ID
-        // In a real app, this would come from the session
-        const GUEST_USER_ID = 'guest-user-123'
+        // If not logged in, we return success so the frontend continues with localStorage
+        // But we don't save to the database
+        if (!session?.user) {
+            return NextResponse.json({ success: true, mode: 'local' })
+        }
 
-        // Ensure guest user exists
-        await prisma.user.upsert({
-            where: { email: 'guest@example.com' },
-            update: {},
-            create: {
-                id: GUEST_USER_ID,
-                email: 'guest@example.com'
-            }
-        })
+        const userId = (session.user as any).id
 
         if (following) {
             await prisma.follow.upsert({
                 where: {
                     userId_pilotId: {
-                        userId: GUEST_USER_ID,
+                        userId: userId,
                         pilotId: pilotId
                     }
                 },
                 update: {},
                 create: {
-                    userId: GUEST_USER_ID,
+                    userId: userId,
                     pilotId: pilotId
                 }
             })
         } else {
             await prisma.follow.deleteMany({
                 where: {
-                    userId: GUEST_USER_ID,
+                    userId: userId,
                     pilotId: pilotId
                 }
             })
         }
 
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true, mode: 'db' })
     } catch (error) {
         console.error('Follow error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

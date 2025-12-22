@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
                 }
             });
 
-            await prisma.result.create({
+            const newResult = await prisma.result.create({
                 data: {
                     position: res.position,
                     pilotName: res.pilotName,
@@ -72,6 +72,34 @@ export async function POST(request: NextRequest) {
                     points: res.points || null
                 }
             });
+
+            // --- PUSH NOTIFICATIONS ---
+            if (pilot?.id) {
+                const followers = await prisma.follow.findMany({
+                    where: { pilotId: pilot.id },
+                    include: {
+                        user: {
+                            include: { pushSubscriptions: true }
+                        }
+                    }
+                });
+
+                if (followers.length > 0) {
+                    const { sendPushNotification } = await import('@/lib/push');
+
+                    for (const follow of followers) {
+                        if (follow.user?.pushSubscriptions) {
+                            for (const sub of follow.user.pushSubscriptions) {
+                                await sendPushNotification(sub, {
+                                    title: `¡Resultado de ${res.pilotName}!`,
+                                    body: `Finalizó P${res.position} en ${eventName}`,
+                                    url: '/resultados'
+                                });
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         return NextResponse.json({ success: true, eventId: raceEvent.id });

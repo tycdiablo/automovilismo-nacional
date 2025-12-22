@@ -109,6 +109,32 @@ export async function POST(request: NextRequest) {
             }
         })
 
+        // --- PUSH NOTIFICATIONS ---
+        if (pilotId) {
+            const followers = await prisma.follow.findMany({
+                where: { pilotId: pilotId },
+                include: {
+                    user: {
+                        include: { pushSubscriptions: true }
+                    }
+                }
+            })
+
+            const { sendPushNotification } = await import('@/lib/push')
+
+            for (const follow of followers) {
+                if (follow.user?.pushSubscriptions) {
+                    for (const sub of follow.user.pushSubscriptions) {
+                        await sendPushNotification(sub, {
+                            title: `¡Novedades de ${payload.pilotNames?.[0] || 'tu piloto'}!`,
+                            body: cleanTitle,
+                            url: payload.url
+                        })
+                    }
+                }
+            }
+        }
+
         return NextResponse.json({
             success: true,
             message: 'News article created successfully',

@@ -7,15 +7,46 @@ import Link from "next/link";
 
 export const dynamic = 'force-dynamic';
 
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+
 export default async function Home() {
-  // 1. Fetch Latest Race Event
+  const session = await getServerSession(authOptions);
+  let followedPilotIds: string[] = [];
+
+  if (session?.user) {
+    const follows = await prisma.follow.findMany({
+      where: { userId: (session.user as any).id },
+      select: { pilotId: true }
+    });
+    followedPilotIds = follows.map(f => f.pilotId);
+  }
+
+  // 1. Fetch Latest Race Event (Prioritize those where followed pilots participated)
   const latestEvent = await prisma.raceEvent.findFirst({
+    where: followedPilotIds.length > 0 ? {
+      results: {
+        some: { pilotId: { in: followedPilotIds } }
+      }
+    } : undefined,
     orderBy: { date: 'desc' },
     include: {
       category: true,
       results: {
         orderBy: { position: 'asc' },
-        take: 3,
+        take: 5,
+        include: {
+          pilot: true,
+        }
+      }
+    },
+  }) || await prisma.raceEvent.findFirst({
+    orderBy: { date: 'desc' },
+    include: {
+      category: true,
+      results: {
+        orderBy: { position: 'asc' },
+        take: 5,
         include: {
           pilot: true,
         }
@@ -23,18 +54,31 @@ export default async function Home() {
     },
   });
 
-  // 2. Fetch "Talentos para seguir" (Random or Featured pilots)
+  // 2. Fetch "Talentos para seguir" (Exclude already followed)
   const featuredPilots = await prisma.pilot.findMany({
+    where: followedPilotIds.length > 0 ? {
+      id: { notIn: followedPilotIds }
+    } : undefined,
     take: 3,
     include: { category: true },
   });
 
-  // 3. Fetch Latest News
+  // 3. Fetch Latest News (Prioritize followed pilots)
   const latestNews = await prisma.news.findMany({
+    where: followedPilotIds.length > 0 ? {
+      OR: [
+        { pilotId: { in: followedPilotIds } },
+        { pilot: { id: { in: followedPilotIds } } }
+      ]
+    } : undefined,
     take: 6,
     orderBy: { publishedAt: 'desc' },
     include: { category: true },
-  });
+  }).then(news => news.length > 0 ? news : prisma.news.findMany({
+    take: 6,
+    orderBy: { publishedAt: 'desc' },
+    include: { category: true },
+  }));
 
   return (
     <div className="space-y-8">

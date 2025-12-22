@@ -87,35 +87,40 @@ async function scrapeSource(source) {
         const html = await response.text();
 
         const news = [];
-        const blockRegex = /<(h[123]|a)[^>]*(?:href=["']([^"']+)["'])?[^>]*>([\s\S]*?)<\/\1>/gi;
+        const blockRegex = /<(div|article|li|section)[^>]*>([\s\S]*?)<\/\1>/gi;
 
         let match;
         while ((match = blockRegex.exec(html)) !== null) {
-            let potentialLink = match[2];
-            let rawContent = match[3];
+            let potentialLink = /href=["']([^"']+)["']/i.exec(match[2])?.[1];
+            let rawContent = match[2];
 
-            const innerLink = /href=["']([^"']+)["']/i.exec(rawContent);
-            if (innerLink) potentialLink = innerLink[1];
+            // Look for image
+            const imgMatch = /<img[^>]*src=["']([^"']+)["']/i.exec(rawContent);
+            const imageUrl = imgMatch ? imgMatch[1] : null;
 
-            const cleanTitle = decodeHtml(rawContent);
+            // Look for title inside block
+            const titleMatch = /<(h[1-4]|a)[^>]*>([\s\S]*?)<\/\1>/i.exec(rawContent);
+            const cleanTitle = titleMatch ? decodeHtml(titleMatch[2]) : '';
 
             if (cleanTitle.length > 25 && cleanTitle.length < 200) {
                 const mentionedPilots = PILOTS.filter(p => cleanTitle.toLowerCase().includes(p.toLowerCase()));
                 const mentionedKeywords = KEYWORDS.filter(k => cleanTitle.toLowerCase().includes(k.toLowerCase()));
 
                 if (mentionedPilots.length > 0 || mentionedKeywords.length > 0) {
-                    let newsUrl = potentialLink || source.url;
-                    if (newsUrl.startsWith('/')) {
+                    let newsUrl = potentialLink || /href=["']([^"']+)["']/i.exec(titleMatch?.[2])?.[1] || source.url;
+
+                    if (newsUrl && newsUrl.startsWith('/')) {
                         const base = new URL(source.url);
                         newsUrl = `${base.protocol}//${base.host}${newsUrl}`;
-                    } else if (!newsUrl.startsWith('http')) {
-                        const base = new URL(source.url);
-                        // Ensure there's a slash between host and path
-                        const host = base.host.endsWith('/') ? base.host : base.host + '/';
-                        newsUrl = `${base.protocol}//${host}${newsUrl}`;
                     }
 
-                    if (newsUrl === source.url || newsUrl.endsWith('/category/noticias/') || newsUrl.length < source.url.length + 5) {
+                    let fullImageUrl = imageUrl;
+                    if (fullImageUrl && fullImageUrl.startsWith('/')) {
+                        const base = new URL(source.url);
+                        fullImageUrl = `${base.protocol}//${base.host}${fullImageUrl}`;
+                    }
+
+                    if (!newsUrl || newsUrl === source.url || newsUrl.length < source.url.length + 5) {
                         continue;
                     }
 
@@ -123,6 +128,7 @@ async function scrapeSource(source) {
                         title: cleanTitle,
                         summary: `Últimas novedades sobre ${mentionedPilots.concat(mentionedKeywords).join(', ')} en ${source.name}.`,
                         url: newsUrl,
+                        imageUrl: fullImageUrl || null,
                         source: source.name,
                         pilotNames: mentionedPilots,
                         categoryName: mentionedKeywords[0] || null,
