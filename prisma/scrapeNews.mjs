@@ -183,7 +183,7 @@ async function run() {
                 successCount++;
                 console.log(`✅ Posted: ${item.title}`);
             }
-        } catch (error) { }
+        } catch (_error) { }
     }
 
     console.log(`🚀 Finalizado. Se procesaron ${successCount} noticias nuevas.`);

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url)
@@ -33,11 +35,15 @@ export async function GET(request: NextRequest) {
 
         console.log('📁 Creating categories...')
         for (const cat of categories) {
-            await prisma.category.upsert({
-                where: { shortName: cat.shortName },
-                update: { name: cat.name, isInternational: cat.isInternational },
-                create: cat,
-            })
+            const existing = await prisma.category.findFirst({ where: { shortName: cat.shortName } });
+            if (existing) {
+                await prisma.category.update({
+                    where: { id: existing.id },
+                    data: { name: cat.name, isInternational: cat.isInternational }
+                });
+            } else {
+                await prisma.category.create({ data: cat });
+            }
         }
 
         // 2. Create Pilots
@@ -62,20 +68,26 @@ export async function GET(request: NextRequest) {
 
         console.log('🏎️ Creating pilots...')
         for (const p of pilotsData) {
-            const category = await prisma.category.findUnique({ where: { shortName: p.categoryShort } })
+            const category = await prisma.category.findFirst({ where: { shortName: p.categoryShort } })
             if (category) {
-                await prisma.pilot.upsert({
-                    where: { slug: p.slug },
-                    update: { profileImageUrl: p.img || null, categoryId: category.id },
-                    create: {
-                        fullName: p.name,
-                        slug: p.slug,
-                        categoryId: category.id,
-                        nationality: 'Argentina',
-                        isActive: true,
-                        profileImageUrl: p.img || null,
-                    },
-                })
+                const existing = await prisma.pilot.findFirst({ where: { slug: p.slug } });
+                if (existing) {
+                    await prisma.pilot.update({
+                        where: { id: existing.id },
+                        data: { profileImageUrl: p.img || null, categoryId: category.id }
+                    });
+                } else {
+                    await prisma.pilot.create({
+                        data: {
+                            fullName: p.name,
+                            slug: p.slug,
+                            categoryId: category.id,
+                            nationality: 'Argentina',
+                            isActive: true,
+                            profileImageUrl: p.img || null,
+                        }
+                    });
+                }
             }
         }
 
@@ -94,8 +106,8 @@ export async function GET(request: NextRequest) {
         ]
 
         for (const r of resultsData) {
-            const pilot = await prisma.pilot.findUnique({ where: { slug: r.slug } })
-            const category = await prisma.category.findUnique({ where: { shortName: r.cat } })
+            const pilot = await prisma.pilot.findFirst({ where: { slug: r.slug } })
+            const category = await prisma.category.findFirst({ where: { shortName: r.cat } })
             if (pilot && category) {
                 await prisma.result.create({
                     data: {
@@ -116,11 +128,12 @@ export async function GET(request: NextRequest) {
             message: 'Database seeded successfully in production environment.'
         })
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Seed API error:', error)
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
         return NextResponse.json({
             error: 'Internal server error during seeding',
-            details: error.message
+            details: errorMessage
         }, { status: 500 })
     }
 }

@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
+import Image from "next/image";
 
 interface NewsCardProps {
     news: {
@@ -25,11 +26,12 @@ export function NewsCard({ news }: NewsCardProps) {
                 </div>
 
                 {news.imageUrl && news.imageUrl !== "/placeholder.svg" && (
-                    <img
+                    <Image
                         src={news.imageUrl}
                         alt={news.title}
-                        className="absolute inset-0 object-cover w-full h-full transition-transform group-hover:scale-105"
-                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                        fill
+                        className="object-cover transition-transform group-hover:scale-105"
+                        unoptimized
                     />
                 )}
 

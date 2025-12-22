@@ -2,6 +2,7 @@
 
 import { UserPlus, UserCheck } from "lucide-react";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 interface PilotCardProps {
     pilot: {
@@ -56,11 +57,12 @@ export function PilotCard({ pilot }: PilotCardProps) {
                 </div>
 
                 {pilot.imageUrl && pilot.imageUrl !== "/placeholder.svg" && (
-                    <img
+                    <Image
                         src={pilot.imageUrl}
                         alt={pilot.name}
-                        className="absolute inset-0 object-cover w-full h-full transition-transform group-hover:scale-105"
-                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                        fill
+                        className="object-cover transition-transform group-hover:scale-105"
+                        unoptimized
                     />
                 )}
 

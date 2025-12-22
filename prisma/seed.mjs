@@ -75,7 +75,7 @@ async function main() {
     console.log('🏁 Creating results (Dec 2025)...')
     await prisma.result.deleteMany({}); // Flush old test results
 
-    const pilotSlugs = ['franco-colapinto', 'julian-santero', 'mariano-werner', 'agustin-canapino', 'pechito-lopez', 'leonel-pernia'];
+    // const pilotSlugs = ['franco-colapinto', 'julian-santero', 'mariano-werner', 'agustin-canapino', 'pechito-lopez', 'leonel-pernia'];
     const results = [
         { slug: 'franco-colapinto', cat: 'F1', event: 'GP de Abu Dhabi', session: 'Carrera Final', pos: 7, gap: '+45.2s', date: '2025-12-14' },
         { slug: 'franco-colapinto', cat: 'F1', event: 'GP de Abu Dhabi', session: 'Clasificación', pos: 9, gap: '+0.850s', date: '2025-12-13' },
