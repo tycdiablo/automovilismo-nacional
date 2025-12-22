@@ -37,8 +37,8 @@ async function main() {
         // International - Formula Racing
         { name: 'Franco Colapinto', slug: 'franco-colapinto', categoryShort: 'F1', img: 'https://images.wsj.net/im-945785?width=1280&size=1.33333333' },
         { name: 'Agustín Canapino', slug: 'agustin-canapino', categoryShort: 'Indy', img: 'https://juncoshollinger.com/wp-content/uploads/2024/01/Agustin-Canapino-Portrait.jpg' },
-        { name: 'José María López', slug: 'pechito-lopez', categoryShort: 'WEC', img: 'https://media.gettyimages.com/id/1498028711/es/foto/jose-maria-lopez-of-argentina-and-toyota-gazoo-racing-poses-for-a-portrait during-the-fia-world.jpg?s=612x612&w=gi&k=20&c=L_v4Y6L2W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W=' },
-        { name: 'Sacha Fenestraz', slug: 'sacha-fenestraz', categoryShort: 'WEC', img: 'https://media.gettyimages.com/id/1460394336/es/foto/sacha-fenestraz-of-argentina-and-nissan-formula-e-team-poses-for-a-portrait during-the-diriyah.jpg?s=612x612&w=gi&k=20&c=L_v4Y6L2W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W=' },
+        { name: 'José María López', slug: 'pechito-lopez', categoryShort: 'WEC', img: 'https://scuderia.ferrari.com/content/dam/ferrari-scuderia/drivers/jose-maria-lopez/headshot-jose-maria-lopez.png' },
+        { name: 'Sacha Fenestraz', slug: 'sacha-fenestraz', categoryShort: 'WEC', img: 'https://media.nissan-cdn.net/content/dam/Nissan/nissan_racing/drivers/sacha-fenestraz/2024/sacha_fenestraz_portrait.jpg' },
 
         // F4 Española
         { name: 'Gino Trappa', slug: 'gino-trappa', categoryShort: 'F4 ESP' },
@@ -49,7 +49,6 @@ async function main() {
         // TCR World Tour
         { name: 'Esteban Guerrieri', slug: 'esteban-guerrieri', categoryShort: 'TCR World', img: 'https://www.tcr-series.com/images/drivers/esteban-guerrieri.jpg' },
         { name: 'Néstor Girolami', slug: 'bebu-girolami', categoryShort: 'TCR World', img: 'https://www.tcr-series.com/images/drivers/nestor-girolami.jpg' },
-        { name: 'Franco Girolami', slug: 'franco-girolami', categoryShort: 'TCR World' },
 
         // Turismo Carretera
         { name: 'Julián Santero', slug: 'julian-santero', categoryShort: 'TC', img: 'https://actc.org.ar/img/pilotos/santero_julian.jpg' },
@@ -82,80 +81,31 @@ async function main() {
     }
     console.log('✅ Pilots created')
 
-    // 3. Create sample Results
-    console.log('🏁 Creating sample results...')
+    // 3. Create current Results (Dec 2025)
+    console.log('🏁 Creating current results...')
     const colapinto = await prisma.pilot.findUnique({ where: { slug: 'franco-colapinto' } })
     const f1 = await prisma.category.findUnique({ where: { shortName: 'F1' } })
 
     if (colapinto && f1) {
-        await prisma.result.upsert({
-            where: { id: 'sample-result-1' },
-            update: {},
-            create: {
-                id: 'sample-result-1',
+        // Clear all old results to avoid 2024 data
+        await prisma.result.deleteMany({});
+
+        await prisma.result.create({
+            data: {
                 pilotId: colapinto.id,
                 categoryId: f1.id,
-                eventName: 'GP de Australia',
-                sessionType: 'Práctica Libre 1',
-                position: 10,
-                timeGap: '+0.450s',
-                eventDate: new Date(), // Current date
+                eventName: 'GP de Abu Dhabi',
+                sessionType: 'Carrera Final',
+                position: 7,
+                timeGap: '+45.2s',
+                eventDate: new Date('2025-12-14'),
             },
         })
     }
-
-
     console.log('✅ Results created')
 
-    // 4. Create sample News
-    console.log('📰 Creating sample news...')
-    const newsData = [
-        {
-            title: 'Colapinto brilla en los tests de Abu Dhabi',
-            summary: 'El argentino completó más de 100 vueltas con el Williams y se perfila como candidato firme para el asiento titular.',
-            source: 'CorazonF1',
-            url: 'https://example.com/news/1',
-            pilotSlug: 'franco-colapinto',
-            categoryShort: 'F1',
-        },
-        {
-            title: 'Canapino confirma su continuidad en Juncos',
-            summary: 'Agustín Canapino renovó su contrato por un año más en la IndyCar tras una sólida temporada debut.',
-            source: 'Carburando',
-            url: 'https://example.com/news/2',
-            pilotSlug: 'agustin-canapino',
-            categoryShort: 'Indy',
-        },
-        {
-            title: 'Gino Trappa sorprende en Valencia',
-            summary: 'El joven piloto argentino se llevó la victoria en la primera carrera de la F4 Española.',
-            source: 'Campeones',
-            url: 'https://example.com/news/3',
-            pilotSlug: 'gino-trappa',
-            categoryShort: 'F4 ESP',
-        },
-    ]
-
-    for (const n of newsData) {
-        const pilot = n.pilotSlug ? await prisma.pilot.findUnique({ where: { slug: n.pilotSlug } }) : null
-        const category = n.categoryShort ? await prisma.category.findUnique({ where: { shortName: n.categoryShort } }) : null
-
-        await prisma.news.upsert({
-            where: { originalUrl: n.url },
-            update: {},
-            create: {
-                title: n.title,
-                summary: n.summary,
-                originalUrl: n.url,
-                sourceName: n.source,
-                imageUrl: '/placeholder.svg',
-                pilotId: pilot?.id,
-                categoryId: category?.id,
-                publishedAt: new Date(Date.now() - Math.random() * 48 * 60 * 60 * 1000),
-            },
-        })
-    }
-    console.log('✅ News created')
+    // 4. News will be handled by the scraper
+    console.log('📰 Skipping mock news (handled by scraper)...')
 
     console.log('🎉 Seeding completed successfully!')
 }

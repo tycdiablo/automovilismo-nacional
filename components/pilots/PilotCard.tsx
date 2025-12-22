@@ -1,3 +1,5 @@
+"use client";
+
 import { UserPlus, UserCheck } from "lucide-react";
 import { useState } from "react";
 
@@ -48,10 +50,23 @@ export function PilotCard({ pilot }: PilotCardProps) {
 
                 <div className="mt-4 flex items-center justify-between">
                     <button
-                        onClick={() => setIsFollowing(!isFollowing)}
+                        onClick={async () => {
+                            const newStatus = !isFollowing;
+                            setIsFollowing(newStatus);
+                            try {
+                                await fetch(`/api/pilotos/${pilot.id}/follow`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ following: newStatus })
+                                });
+                            } catch (e) {
+                                console.error("Error following:", e);
+                                setIsFollowing(!newStatus); // Rollback
+                            }
+                        }}
                         className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border h-9 px-4 py-2 w-full gap-2 ${isFollowing
-                                ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
-                                : 'border-input bg-background hover:bg-accent hover:text-accent-foreground'
+                            ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
+                            : 'border-input bg-background hover:bg-accent hover:text-accent-foreground'
                             }`}>
                         {isFollowing ? (
                             <>
