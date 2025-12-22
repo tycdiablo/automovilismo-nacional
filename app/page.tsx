@@ -67,7 +67,7 @@ export default async function Home() {
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 rounded-full bg-background border border-border flex items-center justify-center overflow-hidden">
                   <span className="font-bold text-primary">
-                    {latestResult.pilot.fullName.split(' ').map(n => n[0]).join('')}
+                    {latestResult.pilot.fullName.split(' ').map((n: string) => n[0]).join('')}
                   </span>
                 </div>
                 <div className="flex-1">
@@ -100,7 +100,7 @@ export default async function Home() {
         <div className="rounded-xl bg-card p-6 border border-border shadow-sm">
           <h2 className="text-lg font-semibold mb-4">Talentos para seguir</h2>
           <div className="space-y-4">
-            {featuredPilots.map((pilot) => (
+            {featuredPilots.map((pilot: any) => (
               <div key={pilot.id} className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
                   {pilot.fullName.charAt(0)}
@@ -141,21 +141,22 @@ export default async function Home() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {latestNews.map((news) => (
+          {latestNews.map((news: any) => (
             <article
               key={news.id}
               className="group relative flex flex-col items-start bg-card rounded-xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-shadow"
             >
-              <div className="aspect-video w-full bg-muted relative">
-                {news.imageUrl ? (
-                  <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/20 font-bold text-4xl">
-                    {/* <img src={news.imageUrl} alt={news.title} className="object-cover w-full h-full" /> */}
-                    IMG
-                  </div>
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/20 font-bold text-4xl">
-                    IMG
-                  </div>
+              <div className="aspect-video w-full bg-muted relative overflow-hidden group">
+                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/20 font-bold text-4xl">
+                  {news.category?.shortName?.charAt(0) || "G"}
+                </div>
+                {news.imageUrl && news.imageUrl !== "/placeholder.svg" && (
+                  <img
+                    src={news.imageUrl}
+                    alt={news.title}
+                    className="absolute inset-0 object-cover w-full h-full transition-transform group-hover:scale-105"
+                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                  />
                 )}
               </div>
               <div className="p-4 flex flex-col flex-1">

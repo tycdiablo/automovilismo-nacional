@@ -35,71 +35,26 @@ async function main() {
     // 2. Create Pilots - Expanded list of Argentine drivers
     const pilotsData = [
         // International - Formula Racing
-        { name: 'Franco Colapinto', slug: 'franco-colapinto', categoryShort: 'F1' },
-        { name: 'Agustín Canapino', slug: 'agustin-canapino', categoryShort: 'Indy' },
-        { name: 'José María López', slug: 'pechito-lopez', categoryShort: 'WEC' },
-        { name: 'Sacha Fenestraz', slug: 'sacha-fenestraz', categoryShort: 'WEC' },
-        { name: 'Luis Perez Companc', slug: 'luis-perez-companc', categoryShort: 'WEC' },
+        { name: 'Franco Colapinto', slug: 'franco-colapinto', categoryShort: 'F1', img: 'https://images.wsj.net/im-945785?width=1280&size=1.33333333' },
+        { name: 'Agustín Canapino', slug: 'agustin-canapino', categoryShort: 'Indy', img: 'https://juncoshollinger.com/wp-content/uploads/2024/01/Agustin-Canapino-Portrait.jpg' },
+        { name: 'José María López', slug: 'pechito-lopez', categoryShort: 'WEC', img: 'https://media.gettyimages.com/id/1498028711/es/foto/jose-maria-lopez-of-argentina-and-toyota-gazoo-racing-poses-for-a-portrait during-the-fia-world.jpg?s=612x612&w=gi&k=20&c=L_v4Y6L2W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W=' },
+        { name: 'Sacha Fenestraz', slug: 'sacha-fenestraz', categoryShort: 'WEC', img: 'https://media.gettyimages.com/id/1460394336/es/foto/sacha-fenestraz-of-argentina-and-nissan-formula-e-team-poses-for-a-portrait during-the-diriyah.jpg?s=612x612&w=gi&k=20&c=L_v4Y6L2W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W9W=' },
 
         // F4 Española
         { name: 'Gino Trappa', slug: 'gino-trappa', categoryShort: 'F4 ESP' },
         { name: 'Teo Schropp', slug: 'teo-schropp', categoryShort: 'F4 ESP' },
         { name: 'Mattia Colnaghi', slug: 'mattia-colnaghi', categoryShort: 'F4 ESP' },
-        { name: 'Nicolás Fuca', slug: 'nicolas-fuca', categoryShort: 'F4 ESP' },
-        { name: 'Simón Bulbarella', slug: 'simon-bulbarella', categoryShort: 'F4 ESP' },
-        { name: 'Sebastián Caram', slug: 'sebastian-caram', categoryShort: 'F4 ESP' },
         { name: 'Tomás Cabrera', slug: 'tomas-cabrera', categoryShort: 'F4 ESP' },
 
-        // FRECA / Formula Regional
-        { name: 'Valentino Mini', slug: 'valentino-mini', categoryShort: 'FRECA' },
-        { name: 'Franco Etcheverry', slug: 'franco-etcheverry', categoryShort: 'FRECA' },
-
         // TCR World Tour
-        { name: 'Esteban Guerrieri', slug: 'esteban-guerrieri', categoryShort: 'TCR World' },
-        { name: 'Néstor Girolami', slug: 'bebu-girolami', categoryShort: 'TCR World' },
+        { name: 'Esteban Guerrieri', slug: 'esteban-guerrieri', categoryShort: 'TCR World', img: 'https://www.tcr-series.com/images/drivers/esteban-guerrieri.jpg' },
+        { name: 'Néstor Girolami', slug: 'bebu-girolami', categoryShort: 'TCR World', img: 'https://www.tcr-series.com/images/drivers/nestor-girolami.jpg' },
         { name: 'Franco Girolami', slug: 'franco-girolami', categoryShort: 'TCR World' },
-        { name: 'Ignacio Montenegro', slug: 'ignacio-montenegro', categoryShort: 'TCR World' },
-
-        // IMSA
-        { name: 'Nicolás Varrone', slug: 'nicolas-varrone', categoryShort: 'IMSA' },
 
         // Turismo Carretera
-        { name: 'Julián Santero', slug: 'julian-santero', categoryShort: 'TC' },
-        { name: 'Mariano Werner', slug: 'mariano-werner', categoryShort: 'TC' },
-        { name: 'Patricio Perez Companc', slug: 'patricio-perez-companc', categoryShort: 'TC' },
-        { name: 'José Savino', slug: 'jose-savino', categoryShort: 'TC' },
-        { name: 'Germán Todino', slug: 'german-todino', categoryShort: 'TC' },
-        { name: 'Diego Ciantini', slug: 'diego-ciantini', categoryShort: 'TC' },
-        { name: 'Emiliano Spataro', slug: 'emiliano-spataro', categoryShort: 'TC' },
-        { name: 'Emmanuel Moriatis', slug: 'emmanuel-moriatis', categoryShort: 'TC' },
-        { name: 'Nicolás Trosset', slug: 'nicolas-trosset', categoryShort: 'TC' },
-        { name: 'Juan Cruz Benvenuti', slug: 'juan-cruz-benvenuti', categoryShort: 'TC' },
-        { name: 'Matías Rossi', slug: 'matias-rossi', categoryShort: 'TC' },
-        { name: 'Juan Pablo Gianini', slug: 'juan-pablo-gianini', categoryShort: 'TC' },
-        { name: 'Valentín Aguirre', slug: 'valentin-aguirre', categoryShort: 'TC' },
-
-        // TC2000
-        { name: 'Franco Paolini', slug: 'franco-paolini', categoryShort: 'TC2000' },
-        { name: 'Leonel Pernía', slug: 'leonel-pernia', categoryShort: 'TC2000' },
-        { name: 'Tiago Pernía', slug: 'tiago-pernia', categoryShort: 'TC2000' },
-        { name: 'Facundo Ardusso', slug: 'facundo-ardusso', categoryShort: 'TC2000' },
-        { name: 'Agustín Calamari', slug: 'agustin-calamari', categoryShort: 'TC2000' },
-        { name: 'Bernardo Llaver', slug: 'bernardo-llaver', categoryShort: 'TC2000' },
-        { name: 'Rodrigo Baptista', slug: 'rodrigo-baptista', categoryShort: 'TC2000' },
-        { name: 'Matías Milla', slug: 'matias-milla', categoryShort: 'TC2000' },
-        { name: 'Fabricio Pezzini', slug: 'fabricio-pezzini', categoryShort: 'TC2000' },
-        { name: 'Julián Santero (TC2000)', slug: 'julian-santero-tc2000', categoryShort: 'TC2000' },
-
-        // Turismo Nacional
-        { name: 'Fabián Yannantuoni', slug: 'fabian-yannantuoni', categoryShort: 'TN' },
-        { name: 'Lionel Ugalde', slug: 'lionel-ugalde', categoryShort: 'TN' },
-        { name: 'Santiago Mangoni', slug: 'santiago-mangoni', categoryShort: 'TN' },
-        { name: 'Rodrigo Pflueger', slug: 'rodrigo-pflueger', categoryShort: 'TN' },
-
-        // TC Pick Up
-        { name: 'Christian Ledesma', slug: 'christian-ledesma', categoryShort: 'TC Pick Up' },
-        { name: 'Martín Serrano', slug: 'martin-serrano', categoryShort: 'TC Pick Up' },
-        { name: 'Juan José Ebarlín', slug: 'juan-jose-ebarlin', categoryShort: 'TC Pick Up' },
+        { name: 'Julián Santero', slug: 'julian-santero', categoryShort: 'TC', img: 'https://actc.org.ar/img/pilotos/santero_julian.jpg' },
+        { name: 'Mariano Werner', slug: 'mariano-werner', categoryShort: 'TC', img: 'https://actc.org.ar/img/pilotos/werner_mariano.jpg' },
+        { name: 'Facundo Ardusso', slug: 'facundo-ardusso', categoryShort: 'TC', img: 'https://actc.org.ar/img/pilotos/ardusso_facundo.jpg' },
     ]
 
     console.log('🏎️ Creating pilots...')
@@ -111,13 +66,16 @@ async function main() {
         if (category) {
             await prisma.pilot.upsert({
                 where: { slug: p.slug },
-                update: {},
+                update: {
+                    profileImageUrl: p.img || null,
+                },
                 create: {
                     fullName: p.name,
                     slug: p.slug,
                     categoryId: category.id,
                     nationality: 'Argentina',
                     isActive: true,
+                    profileImageUrl: p.img || null,
                 },
             })
         }
@@ -127,37 +85,26 @@ async function main() {
     // 3. Create sample Results
     console.log('🏁 Creating sample results...')
     const colapinto = await prisma.pilot.findUnique({ where: { slug: 'franco-colapinto' } })
-    const canapino = await prisma.pilot.findUnique({ where: { slug: 'agustin-canapino' } })
     const f1 = await prisma.category.findUnique({ where: { shortName: 'F1' } })
-    const indy = await prisma.category.findUnique({ where: { shortName: 'Indy' } })
 
     if (colapinto && f1) {
-        await prisma.result.create({
-            data: {
+        await prisma.result.upsert({
+            where: { id: 'sample-result-1' },
+            update: {},
+            create: {
+                id: 'sample-result-1',
                 pilotId: colapinto.id,
                 categoryId: f1.id,
-                eventName: 'GP de Italia - Monza',
-                sessionType: 'Carrera',
-                position: 12,
-                timeGap: '+1 vuelta',
-                eventDate: new Date('2024-09-01'),
+                eventName: 'GP de Australia',
+                sessionType: 'Práctica Libre 1',
+                position: 10,
+                timeGap: '+0.450s',
+                eventDate: new Date(), // Current date
             },
         })
     }
 
-    if (canapino && indy) {
-        await prisma.result.create({
-            data: {
-                pilotId: canapino.id,
-                categoryId: indy.id,
-                eventName: 'Indy 500',
-                sessionType: 'Carrera',
-                position: 16,
-                timeGap: '+2 vueltas',
-                eventDate: new Date('2024-05-26'),
-            },
-        })
-    }
+
     console.log('✅ Results created')
 
     // 4. Create sample News

@@ -24,11 +24,14 @@ export function NewsCard({ news }: NewsCardProps) {
                 <div className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-muted-foreground/30">
                     {news.category.charAt(0)}
                 </div>
-                {/* Image handled by parent or placeholder for now */}
+
                 {news.imageUrl && news.imageUrl !== "/placeholder.svg" && (
-                    <div className="absolute inset-0">
-                        {/* <img src={news.imageUrl} alt={news.title} className="object-cover w-full h-full" /> */}
-                    </div>
+                    <img
+                        src={news.imageUrl}
+                        alt={news.title}
+                        className="absolute inset-0 object-cover w-full h-full transition-transform group-hover:scale-105"
+                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                    />
                 )}
 
                 <div className="absolute top-2 left-2 flex flex-wrap gap-2">
