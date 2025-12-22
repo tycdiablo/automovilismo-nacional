@@ -39,9 +39,9 @@ export default async function ResultsPage() {
 
             <div className="space-y-12">
                 {raceEvents.length > 0 ? (
-                    raceEvents.map((event: any) => (
+                    raceEvents.map((event) => (
                         <section key={event.id} className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
-                            {/* ... (Event Header remains same, just adding type to map) */}
+                            {/* Event Header */}
                             <div className="bg-muted/30 p-6 border-b border-border">
                                 <div className="flex flex-wrap items-center justify-between gap-4">
                                     <div>
@@ -81,7 +81,7 @@ export default async function ResultsPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border">
-                                        {event.results.map((result: any) => (
+                                        {event.results.map((result) => (
                                             <tr key={result.id} className="hover:bg-accent/5 transition-colors">
                                                 <td className="px-6 py-4 font-bold text-foreground">
                                                     {result.position}

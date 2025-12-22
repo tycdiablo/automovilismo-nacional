@@ -19,7 +19,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     // Close sidebar when clicking a link
     useEffect(() => {
         onClose();
-    }, [pathname]);
+    }, [pathname, onClose]);
 
     // Prevent body scroll when sidebar is open
     useEffect(() => {

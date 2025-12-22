@@ -1,4 +1,4 @@
-import { ArrowRight, Calendar, Clock } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { formatDistanceToNow } from "date-fns";
