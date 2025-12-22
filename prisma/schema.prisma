@@ -89,8 +89,8 @@ model Result {
   pilotName String?
   pilotFlag String? // Country code or emoji
 
-  raceEventId String
-  raceEvent   RaceEvent @relation(fields: [raceEventId], references: [id])
+  raceEventId String?
+  raceEvent   RaceEvent? @relation(fields: [raceEventId], references: [id])
 
   // For backward compatibility / easier querying
   categoryId String
