@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
         }
 
-        const userId = session?.user ? (session.user as any).id : null;
+        const userId = session?.user ? (session.user as { id: string }).id : null;
 
         await prisma.pushSubscription.upsert({
             where: { endpoint: subscription.endpoint },

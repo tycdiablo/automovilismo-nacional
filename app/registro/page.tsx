@@ -35,7 +35,7 @@ export default function RegisterPage() {
                 setSuccess(true);
                 setTimeout(() => router.push("/login"), 2000);
             }
-        } catch (err) {
+        } catch {
             setError("Ocurrió un error inesperado.");
         } finally {
             setLoading(false);

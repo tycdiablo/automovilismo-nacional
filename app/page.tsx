@@ -16,7 +16,7 @@ export default async function Home() {
 
   if (session?.user) {
     const follows = await prisma.follow.findMany({
-      where: { userId: (session.user as any).id },
+      where: { userId: (session.user as { id: string }).id },
       select: { pilotId: true }
     });
     followedPilotIds = follows.map(f => f.pilotId);

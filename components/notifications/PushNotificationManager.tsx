@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 
 export function PushNotificationManager() {
     const { data: session } = useSession();
 
-    useEffect(() => {
-        if ("serviceWorker" in navigator && "PushManager" in window) {
-            registerServiceWorker();
-        }
-    }, [session]);
+    const saveSubscription = useCallback(async (subscription: PushSubscription) => {
+        await fetch("/api/notifications/subscribe", {
+            method: "POST",
+            body: JSON.stringify(subscription),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+    }, []);
 
-    async function registerServiceWorker() {
+    const registerServiceWorker = useCallback(async () => {
         try {
             const registration = await navigator.serviceWorker.register("/sw.js");
             console.log("Service Worker registered");
@@ -37,17 +41,13 @@ export function PushNotificationManager() {
         } catch (error) {
             console.error("SW Registration failed:", error);
         }
-    }
+    }, [saveSubscription]);
 
-    async function saveSubscription(subscription: any) {
-        await fetch("/api/notifications/subscribe", {
-            method: "POST",
-            body: JSON.stringify(subscription),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-    }
+    useEffect(() => {
+        if ("serviceWorker" in navigator && "PushManager" in window) {
+            registerServiceWorker();
+        }
+    }, [session, registerServiceWorker]);
 
     return null; // This component doesn't render anything
 }

@@ -13,7 +13,7 @@ export const navigation = [
 ];
 
 import { useSession, signOut } from "next-auth/react";
-import { LogOut, User as UserIcon, LogIn } from "lucide-react";
+import { LogOut, LogIn } from "lucide-react";
 
 export function Sidebar() {
     const pathname = usePathname();

@@ -19,7 +19,7 @@ export async function POST(
             return NextResponse.json({ success: true, mode: 'local' })
         }
 
-        const userId = (session.user as any).id
+        const userId = (session.user as { id: string }).id
 
         if (following) {
             await prisma.follow.upsert({

@@ -12,7 +12,10 @@ if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
     );
 }
 
-export async function sendPushNotification(subscription: any, payload: { title: string, body: string, url: string }) {
+export async function sendPushNotification(
+    subscription: { endpoint: string; p256dh: string; auth: string },
+    payload: { title: string, body: string, url: string }
+) {
     try {
         await webpush.sendNotification(
             {
@@ -25,10 +28,13 @@ export async function sendPushNotification(subscription: any, payload: { title: 
             JSON.stringify(payload)
         );
         return { success: true };
-    } catch (error: any) {
-        if (error.statusCode === 410 || error.statusCode === 404) {
-            // Subscription expired or gone
-            return { success: false, expired: true };
+    } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'statusCode' in error) {
+            const err = error as { statusCode: number };
+            if (err.statusCode === 410 || err.statusCode === 404) {
+                // Subscription expired or gone
+                return { success: false, expired: true };
+            }
         }
         console.error('Error sending push notification:', error);
         return { success: false };

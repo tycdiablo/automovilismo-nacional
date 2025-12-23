@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
                 name: user.name
             }
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Registration Error:", error);
         return NextResponse.json(
             { error: "Error al registrar usuario" },

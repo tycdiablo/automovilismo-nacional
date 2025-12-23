@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
                 }
             });
 
-            const newResult = await prisma.result.create({
+            await prisma.result.create({
                 data: {
                     position: res.position,
                     pilotName: res.pilotName,
