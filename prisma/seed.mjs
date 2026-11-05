@@ -1,5 +1,20 @@
+import { existsSync, readFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
 import { categories, pilots } from "../data/seed-data.mjs";
+
+/** Carga las variables de .env cuando el script se corre con `node` directamente */
+function loadEnvFile(path = ".env") {
+  if (!existsSync(path)) return;
+  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
+    const match = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/.exec(line);
+    if (!match || process.env[match[1]] !== undefined) continue;
+    let value = match[2].trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    process.env[match[1]] = value;
+  }
+}
 
 /**
  * Carga categorías y pilotos base. Es idempotente: se puede correr muchas veces.
@@ -54,6 +69,11 @@ export async function seed(prisma) {
 }
 
 if (process.argv[1] && process.argv[1].endsWith("seed.mjs")) {
+  loadEnvFile();
+  if (!process.env.DATABASE_URL) {
+    console.error("❌ Falta DATABASE_URL. Creá el archivo .env en la raíz del proyecto (ver .env.example).");
+    process.exit(1);
+  }
   const prisma = new PrismaClient();
   seed(prisma)
     .then((r) => console.log(`🌱 Seed OK: ${r.categories} categorías, ${r.pilots} pilotos (${r.created} nuevos)`))
