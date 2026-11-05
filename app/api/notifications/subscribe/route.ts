@@ -1,35 +1,37 @@
-import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/session";
+
+type SubscriptionBody = { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
 
 export async function POST(req: NextRequest) {
-    try {
-        const session = await getServerSession(authOptions);
-        const subscription = await req.json();
+  try {
+    const user = await getCurrentUser();
+    const sub: SubscriptionBody = await req.json();
 
-        if (!subscription.endpoint) {
-            return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
-        }
-
-        const userId = session?.user ? (session.user as { id: string }).id : null;
-
-        await prisma.pushSubscription.upsert({
-            where: { endpoint: subscription.endpoint },
-            update: {
-                userId: userId, // Update userId if they log in later
-            },
-            create: {
-                endpoint: subscription.endpoint,
-                p256dh: subscription.keys.p256dh,
-                auth: subscription.keys.auth,
-                userId: userId,
-            }
-        });
-
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        console.error("Push Subscribe Error:", error);
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (!sub.endpoint || !/^https:\/\//.test(sub.endpoint) || !sub.keys?.p256dh || !sub.keys?.auth) {
+      return NextResponse.json({ error: "Suscripción inválida" }, { status: 400 });
     }
+
+    await prisma.pushSubscription.upsert({
+      where: { endpoint: sub.endpoint },
+      update: { userId: user?.id ?? null, p256dh: sub.keys.p256dh, auth: sub.keys.auth },
+      create: { endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth, userId: user?.id ?? null },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Push subscribe error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { endpoint } = (await req.json()) as SubscriptionBody;
+    if (endpoint) await prisma.pushSubscription.deleteMany({ where: { endpoint } });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

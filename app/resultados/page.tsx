@@ -1,127 +1,119 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Trophy, MapPin, CalendarDays } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { Trophy, MapPin, Calendar } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { findCategoryBySlug, getCategories } from "@/lib/queries";
+import { CategoryBadge, EmptyState, FilterChips, PageHeader, Pagination } from "@/components/ui";
+import { categorySlug, cn, countryEs, formatArg, positionBadgeClass } from "@/lib/utils";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default async function ResultsPage() {
-    const raceEvents = await prisma.raceEvent.findMany({
-        orderBy: {
-            date: 'desc'
+export const metadata: Metadata = {
+  title: "Resultados",
+  description: "Resultados y clasificaciones de las carreras del automovilismo argentino y de los pilotos argentinos en el exterior.",
+};
+
+const PER_PAGE = 10;
+
+type Props = { searchParams: Promise<{ [key: string]: string | string[] | undefined }> };
+
+export default async function ResultsPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.pagina) || 1);
+  const category = await findCategoryBySlug(typeof sp.categoria === "string" ? sp.categoria : undefined);
+  const where = { status: "FINISHED", results: { some: {} }, ...(category ? { categoryId: category.id } : {}) };
+
+  const [events, total, categories, used] = await Promise.all([
+    prisma.raceEvent.findMany({
+      where,
+      orderBy: { date: "desc" },
+      skip: (page - 1) * PER_PAGE,
+      take: PER_PAGE,
+      include: {
+        category: true,
+        results: {
+          orderBy: { position: "asc" },
+          include: { pilot: { select: { fullName: true, slug: true } } },
         },
-        include: {
-            category: true,
-            results: {
-                orderBy: {
-                    position: 'asc'
-                },
-                include: {
-                    pilot: true
-                }
-            }
-        }
-    });
+      },
+    }),
+    prisma.raceEvent.count({ where }),
+    getCategories(),
+    prisma.raceEvent.groupBy({ by: ["categoryId"], where: { status: "FINISHED" } }),
+  ]);
 
-    return (
-        <div className="space-y-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                        <Trophy className="h-8 w-8 text-yellow-500" />
-                        Resultados Completos
-                    </h1>
-                    <p className="text-muted-foreground mt-1">
-                        Clasificaciones finales de los Grandes Premios y competencias nacionales.
-                    </p>
-                </div>
-            </div>
+  const usedIds = new Set(used.map((u) => u.categoryId));
+  const chips = categories.filter((c) => usedIds.has(c.id)).map((c) => ({ value: categorySlug(c), label: c.shortName, color: c.color }));
 
-            <div className="space-y-12">
-                {raceEvents.length > 0 ? (
-                    raceEvents.map((event) => (
-                        <section key={event.id} className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
-                            {/* Event Header */}
-                            <div className="bg-muted/30 p-6 border-b border-border">
-                                <div className="flex flex-wrap items-center justify-between gap-4">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
-                                                {event.category.shortName}
-                                            </span>
-                                            <h2 className="text-xl font-bold text-foreground">
-                                                {event.name}
-                                            </h2>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                                            <span className="flex items-center gap-1">
-                                                <Calendar className="h-4 w-4" />
-                                                {format(new Date(event.date), "PPP", { locale: es })}
-                                            </span>
-                                            {event.location && (
-                                                <span className="flex items-center gap-1">
-                                                    <MapPin className="h-4 w-4" />
-                                                    {event.location}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Resultados" icon={Trophy} description="Podios y la posición de cada argentino en las últimas carreras." />
+      <FilterChips items={chips} active={category ? categorySlug(category) : undefined} basePath="/resultados" />
 
-                            {/* Results Table */}
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
-                                        <tr>
-                                            <th className="px-6 py-3 w-16">Pos</th>
-                                            <th className="px-6 py-3">Piloto</th>
-                                            <th className="px-6 py-3">Tiempo/Dif</th>
-                                            <th className="px-6 py-3 text-right">Puntos</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border">
-                                        {event.results.map((result) => (
-                                            <tr key={result.id} className="hover:bg-accent/5 transition-colors">
-                                                <td className="px-6 py-4 font-bold text-foreground">
-                                                    {result.position}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-lg" title="Nacionalidad">
-                                                            {result.pilotFlag || (result.pilot?.nationality === 'Argentina' ? '🇦🇷' : '🏁')}
-                                                        </span>
-                                                        <span className={result.pilotId ? "font-semibold text-primary" : "text-foreground"}>
-                                                            {result.pilotName || result.pilot?.fullName}
-                                                        </span>
-                                                        {result.pilotId && (
-                                                            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/20 text-[10px] text-primary font-bold uppercase">
-                                                                Seguido
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-muted-foreground">
-                                                    {result.timeGap || "-"}
-                                                </td>
-                                                <td className="px-6 py-4 text-right font-medium text-foreground">
-                                                    {result.points || "-"}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </section>
-                    ))
-                ) : (
-                    <div className="text-center py-20 text-muted-foreground bg-muted/10 rounded-2xl border border-dashed border-border">
-                        <Trophy className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                        <p className="text-lg font-medium">No hay Gran Premios registrados todavía.</p>
-                        <p className="text-sm">Usa la API de seed para cargar datos de ejemplo.</p>
+      {events.length ? (
+        <div className="space-y-4">
+          {events.map((event) => {
+            const podium = event.results.slice(0, 3);
+            const argentines = event.results.filter((r) => r.pilot && r.position > 3);
+            return (
+              <Link
+                key={event.id}
+                href={`/carreras/${event.id}`}
+                className="card group block overflow-hidden transition-all hover:border-primary/40 hover:shadow-md"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 px-5 py-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CategoryBadge category={event.category} />
+                      {event.round && <span className="text-xs text-muted-foreground">Fecha {event.round}</span>}
                     </div>
+                    <h2 className="mt-1 text-lg font-bold group-hover:text-primary">{event.name}</h2>
+                    <p className="mt-0.5 flex flex-wrap gap-x-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <CalendarDays className="h-3.5 w-3.5" /> {formatArg(event.date, { day: "numeric", month: "long", year: "numeric" })}
+                      </span>
+                      {(event.circuit || event.location) && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" /> {[event.circuit || event.location, countryEs(event.country)].filter(Boolean).join(", ")}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <span className="text-sm font-medium text-primary">Ver clasificación →</span>
+                </div>
+                <div className="grid gap-px bg-border sm:grid-cols-3">
+                  {podium.map((r) => (
+                    <div key={r.id} className={cn("flex items-center gap-3 bg-card px-5 py-3", r.pilot && "bg-primary/[0.06]")}>
+                      <span className={cn("inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold", positionBadgeClass(r.position))}>
+                        {r.position}
+                      </span>
+                      <div className="min-w-0">
+                        <p className={cn("truncate text-sm font-semibold", r.pilot && "text-primary")}>
+                          {r.pilotFlag} {r.pilot?.fullName || r.pilotName}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">{r.team || r.timeGap || "—"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {argentines.length > 0 && (
+                  <div className="flex flex-wrap gap-2 border-t border-border px-5 py-3 text-sm">
+                    {argentines.map((r) => (
+                      <span key={r.id} className="rounded-md bg-primary/10 px-2 py-1 font-medium text-primary">
+                        🇦🇷 {r.pilot?.fullName} · P{r.position}
+                      </span>
+                    ))}
+                  </div>
                 )}
-            </div>
+              </Link>
+            );
+          })}
         </div>
-    );
+      ) : (
+        <EmptyState icon={Trophy} title="Todavía no hay resultados" description="Los resultados de F1 se sincronizan solos; el resto se carga desde el panel de administración." />
+      )}
+
+      <Pagination page={page} totalPages={Math.ceil(total / PER_PAGE)} basePath="/resultados" params={{ categoria: category ? categorySlug(category) : undefined }} />
+    </div>
+  );
 }

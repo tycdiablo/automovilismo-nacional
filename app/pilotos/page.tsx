@@ -1,75 +1,92 @@
-import { Search } from "lucide-react";
-import { PilotCard } from "@/components/pilots/PilotCard";
+import type { Metadata } from "next";
+import { Search, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/session";
+import { findCategoryBySlug, getCategories, getFollowedPilotIds, pilotCardInclude } from "@/lib/queries";
+import { EmptyState, FilterChips, PageHeader } from "@/components/ui";
+import { PilotCard } from "@/components/pilots/PilotCard";
+import { categorySlug } from "@/lib/utils";
 
-export default async function PilotsPage({
-    searchParams,
-}: {
-    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-}) {
-    const { search } = await searchParams;
-    const query = typeof search === 'string' ? search : '';
+export const dynamic = "force-dynamic";
 
-    const pilots = await prisma.pilot.findMany({
-        where: {
+export const metadata: Metadata = {
+  title: "Pilotos argentinos",
+  description: "Todos los pilotos argentinos que compiten en el país y en el mundo. Seguí a tus favoritos y recibí alertas.",
+};
+
+type Props = { searchParams: Promise<{ [key: string]: string | string[] | undefined }> };
+
+export default async function PilotsPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const query = typeof sp.search === "string" ? sp.search.trim() : "";
+  const categoryParam = typeof sp.categoria === "string" ? sp.categoria : undefined;
+  const scope = sp.ambito === "nacional" || sp.ambito === "internacional" ? sp.ambito : undefined;
+
+  const [categories, user, category] = await Promise.all([
+    getCategories(),
+    getCurrentUser(),
+    findCategoryBySlug(categoryParam),
+  ]);
+  const followed = await getFollowedPilotIds(user?.id);
+
+  const pilots = await prisma.pilot.findMany({
+    where: {
+      isActive: true,
+      ...(category ? { categoryId: category.id } : {}),
+      ...(scope ? { category: { isInternational: scope === "internacional" } } : {}),
+      ...(query
+        ? {
             OR: [
-                { fullName: { contains: query } },  // SQLite case-insensitive by default roughly, but let's see
-                { category: { name: { contains: query } } }
-            ]
-        },
-        include: {
-            category: true
-        }
-    });
+              { fullName: { contains: query, mode: "insensitive" } },
+              { aliases: { contains: query, mode: "insensitive" } },
+              { team: { contains: query, mode: "insensitive" } },
+              { category: { name: { contains: query, mode: "insensitive" } } },
+            ],
+          }
+        : {}),
+    },
+    include: pilotCardInclude,
+    orderBy: [{ featured: "desc" }, { category: { sortOrder: "asc" } }, { fullName: "asc" }],
+  });
 
-    // Map Prisma result to the component's expected shape if slightly different
-    const mappedPilots = pilots.map(p => ({
-        id: p.id,
-        name: p.fullName,
-        category: p.category.shortName,
-        team: p.category.name, // Use category name as "team" for now or just the category
-        nationality: p.nationality,
-        imageUrl: p.profileImageUrl || "/placeholder.svg",
-        isInternational: p.category.isInternational
-    }));
+  const usedCategoryIds = new Set(
+    (await prisma.pilot.groupBy({ by: ["categoryId"], where: { isActive: true } })).map((g) => g.categoryId)
+  );
+  const chips = categories
+    .filter((c) => usedCategoryIds.has(c.id))
+    .map((c) => ({ value: categorySlug(c), label: c.shortName, color: c.color }));
 
-    return (
-        <div className="space-y-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Pilotos</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Seguí a tus pilotos favoritos y recibí notificaciones de sus carreras.
-                    </p>
-                </div>
-            </div>
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Pilotos"
+        icon={Users}
+        description="Los argentinos que compiten en el país y en el mundo. Seguí a tus favoritos para armar tu inicio personalizado y recibir alertas."
+      />
 
-            {/* Search Bar (Client Side Navigation needed or plain Form) */}
-            <div className="relative max-w-md">
-                <form method="GET">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <input
-                        name="search"
-                        type="text"
-                        defaultValue={query}
-                        placeholder="Buscar piloto o categoría..."
-                        className="w-full rounded-lg border border-border bg-background px-9 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                </form>
-            </div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <FilterChips items={chips} active={category ? categorySlug(category) : undefined} basePath="/pilotos" extraParams={{ search: query || undefined }} />
+        <form method="GET" className="relative w-full lg:max-w-xs">
+          {category && <input type="hidden" name="categoria" value={categorySlug(category)} />}
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input name="search" type="search" defaultValue={query} placeholder="Buscar piloto, equipo o categoría…" className="input pl-9" />
+        </form>
+      </div>
 
-            {/* Grid */}
-            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {mappedPilots.map((pilot) => (
-                    <PilotCard key={pilot.id} pilot={pilot} />
-                ))}
+      <p className="text-sm text-muted-foreground">
+        {pilots.length} piloto{pilots.length === 1 ? "" : "s"}
+        {category ? ` en ${category.name}` : ""}
+        {query ? ` para “${query}”` : ""}
+      </p>
 
-                {mappedPilots.length === 0 && (
-                    <div className="col-span-full py-12 text-center text-muted-foreground">
-                        No se encontraron pilotos que coincidan con tu búsqueda.
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {pilots.map((pilot) => (
+          <PilotCard key={pilot.id} pilot={pilot} isFollowing={followed.has(pilot.id)} />
+        ))}
+        {pilots.length === 0 && (
+          <EmptyState icon={Search} title="No encontramos pilotos" description="Probá con otro nombre o quitá los filtros." />
+        )}
+      </div>
+    </div>
+  );
 }

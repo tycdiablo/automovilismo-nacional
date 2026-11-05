@@ -1,74 +1,110 @@
+import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import Image from "next/image";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
+import { CategoryBadge } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
-interface NewsCardProps {
-    news: {
-        id: string;
-        title: string;
-        summary: string;
-        source: string;
-        publishedAt: string;
-        imageUrl: string;
-        category: string;
-        relatedPilot?: string;
-        originalUrl?: string;
-    };
+export type NewsCardData = {
+  id: string;
+  title: string;
+  summary: string | null;
+  sourceName: string;
+  publishedAt: Date;
+  imageUrl: string | null;
+  originalUrl: string;
+  category?: { shortName: string; slug?: string | null; color?: string | null } | null;
+  pilot?: { fullName: string; slug: string } | null;
+};
+
+function NewsImage({ news, className }: { news: NewsCardData; className?: string }) {
+  const hasImage = news.imageUrl && news.imageUrl !== "/placeholder.svg";
+  return (
+    <div className={cn("relative overflow-hidden bg-muted", className)}>
+      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/15 via-transparent to-secondary/10">
+        <span className="font-display text-5xl font-extrabold uppercase text-foreground/10">
+          {news.category?.shortName ?? "MN"}
+        </span>
+      </div>
+      {hasImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={news.imageUrl!}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      )}
+    </div>
+  );
 }
 
-export function NewsCard({ news }: NewsCardProps) {
-    const detailUrl = news.originalUrl || `/noticias/${news.id}`;
+export function NewsCard({ news, variant = "default" }: { news: NewsCardData; variant?: "default" | "compact" | "featured" }) {
+  const ago = formatDistanceToNow(new Date(news.publishedAt), { addSuffix: true, locale: es });
 
+  if (variant === "compact") {
     return (
-        <article className="flex flex-col overflow-hidden rounded-xl bg-card border border-border shadow-sm transition-all hover:shadow-md h-full">
-            <div className="aspect-video w-full bg-muted relative overflow-hidden group flex items-center justify-center">
-                <div className="text-4xl font-bold text-muted-foreground/30">
-                    {news.category.charAt(0)}
-                </div>
-
-                {news.imageUrl && news.imageUrl !== "/placeholder.svg" && (
-                    <Image
-                        src={news.imageUrl}
-                        alt={news.title}
-                        fill
-                        className="object-cover transition-transform group-hover:scale-105"
-                        unoptimized
-                    />
-                )}
-
-                <div className="absolute top-2 left-2 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-md bg-background/90 px-2 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm">
-                        {news.category}
-                    </span>
-                    {news.relatedPilot && (
-                        <span className="inline-flex items-center rounded-md bg-primary/90 px-2 py-1 text-xs font-medium text-primary-foreground shadow-sm backdrop-blur-sm">
-                            {news.relatedPilot}
-                        </span>
-                    )}
-                </div>
-            </div>
-
-            <div className="flex flex-1 flex-col p-5">
-                <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                    <span className="font-medium text-foreground">{news.source}</span>
-                    <time>{news.publishedAt}</time>
-                </div>
-
-                <h3 className="text-lg font-bold leading-tight text-foreground mb-2 group-hover:text-primary transition-colors">
-                    <a href={detailUrl} target="_blank" rel="noopener noreferrer">
-                        {news.title}
-                    </a>
-                </h3>
-
-                <p className="flex-1 text-sm leading-relaxed text-muted-foreground line-clamp-3">
-                    {news.summary}
-                </p>
-
-                <div className="mt-4 pt-4 border-t border-border flex items-center justify-end">
-                    <a href={detailUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:text-primary/80 flex items-center gap-1">
-                        Leer más <ArrowUpRight className="h-4 w-4" />
-                    </a>
-                </div>
-            </div>
-        </article>
+      <article className="group relative flex gap-3 rounded-lg p-2 transition-colors hover:bg-accent/60">
+        <NewsImage news={news} className="h-16 w-24 shrink-0 rounded-md" />
+        <div className="min-w-0">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary">
+            <a href={news.originalUrl} target="_blank" rel="noopener noreferrer">
+              <span className="absolute inset-0" />
+              {news.title}
+            </a>
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {news.sourceName} · {ago}
+          </p>
+        </div>
+      </article>
     );
+  }
+
+  return (
+    <article
+      className={cn(
+        "card group relative flex h-full flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg",
+        variant === "featured" && "md:col-span-2 md:flex-row"
+      )}
+    >
+      <NewsImage news={news} className={cn("aspect-video w-full", variant === "featured" && "md:aspect-auto md:w-3/5")} />
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {news.category && <CategoryBadge category={news.category} />}
+          {news.pilot && (
+            <Link
+              href={`/pilotos/${news.pilot.slug}`}
+              className="relative z-10 rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20"
+            >
+              {news.pilot.fullName}
+            </Link>
+          )}
+        </div>
+        <h3
+          className={cn(
+            "font-semibold leading-snug text-foreground transition-colors group-hover:text-primary",
+            variant === "featured" ? "text-xl md:text-2xl" : "text-base"
+          )}
+        >
+          <a href={news.originalUrl} target="_blank" rel="noopener noreferrer">
+            <span className="absolute inset-0" />
+            {news.title}
+          </a>
+        </h3>
+        {news.summary && (
+          <p className={cn("mt-2 flex-1 text-sm leading-relaxed text-muted-foreground", variant === "featured" ? "line-clamp-4" : "line-clamp-3")}>
+            {news.summary}
+          </p>
+        )}
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
+          <span>
+            <span className="font-semibold text-foreground">{news.sourceName}</span> · <time dateTime={new Date(news.publishedAt).toISOString()}>{ago}</time>
+          </span>
+          <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
+        </div>
+      </div>
+    </article>
+  );
 }
