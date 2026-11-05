@@ -17,7 +17,7 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "node_modules/**",
-      "prisma/*.js", // Ignore old JS seed files if they have errors
+      "public/sw.js",
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),

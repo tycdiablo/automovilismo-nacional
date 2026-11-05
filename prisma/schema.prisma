@@ -7,16 +7,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ---------------------------------------------------------------------------
+// Dominio deportivo
+// ---------------------------------------------------------------------------
+
 model Category {
-  id              String      @id @default(uuid())
+  id              String  @id @default(uuid())
   name            String
-  shortName       String      @unique
+  shortName       String  @unique
+  slug            String? @unique
+  description     String?
+  color           String? // Color de acento en hex (#RRGGBB)
+  website         String?
   logoUrl         String?
-  isInternational Boolean     @default(false)
-  pilots          Pilot[]
-  news            News[]
-  raceEvents      RaceEvent[]
-  results         Result[]
+  isInternational Boolean @default(false)
+  sortOrder       Int     @default(100)
+
+  pilots     Pilot[]
+  news       News[]
+  raceEvents RaceEvent[]
+  results    Result[]
+  standings  Standing[]
 
   @@map("categories")
 }
@@ -28,17 +39,27 @@ model Pilot {
   categoryId         String
   category           Category  @relation(fields: [categoryId], references: [id])
   nationality        String    @default("Argentina")
+  team               String?
+  carNumber          Int?
+  birthPlace         String?
   bio                String?
   height             Float?
   dateOfBirth        DateTime?
   profileImageUrl    String?
   isActive           Boolean   @default(true)
-  socialMediaHandles String? // Stored as JSON string
+  featured           Boolean   @default(false)
+  // Nombres alternativos para detectar menciones en noticias, separados por coma
+  aliases            String?
+  // Identificador en fuentes externas (ej: driverId de Jolpica/Ergast para F1)
+  externalId         String?   @unique
+  socialMediaHandles String? // JSON: { "instagram": "...", "x": "..." }
 
   news      News[]
   results   Result[]
+  standings Standing[]
   followers Follow[]
 
+  @@index([categoryId])
   @@map("pilots")
 }
 
@@ -50,13 +71,17 @@ model News {
   sourceName  String
   publishedAt DateTime @default(now())
   imageUrl    String?
+  createdAt   DateTime @default(now())
 
   pilotId String?
-  pilot   Pilot?  @relation(fields: [pilotId], references: [id])
+  pilot   Pilot?  @relation(fields: [pilotId], references: [id], onDelete: SetNull)
 
   categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id])
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
+  @@index([publishedAt])
+  @@index([pilotId])
+  @@index([categoryId])
   @@map("news")
 }
 
@@ -65,13 +90,25 @@ model RaceEvent {
   name        String
   description String?
   location    String?
+  circuit     String?
+  country     String?
   date        DateTime
+  season      Int?
+  round       Int?
+  // SCHEDULED | FINISHED | CANCELLED
+  status      String   @default("SCHEDULED")
+  // Horarios de las sesiones: [{ "name": "Clasificación", "date": "ISO" }]
+  sessions    Json?
+  // Identificador estable para sincronizaciones (ej: "f1-2026-19")
+  externalId  String?  @unique
 
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
   results Result[]
 
+  @@index([date])
+  @@index([categoryId, season])
   @@map("race_events")
 }
 
@@ -80,37 +117,78 @@ model Result {
   position Int
   timeGap  String?
   points   Float?
+  grid     Int?
+  team     String?
+  status   String?
 
-  // Tracked Pilot (optional for full tables)
+  // Piloto seguido (opcional, para tablas completas)
   pilotId String?
-  pilot   Pilot?  @relation(fields: [pilotId], references: [id])
+  pilot   Pilot?  @relation(fields: [pilotId], references: [id], onDelete: SetNull)
 
-  // External Pilot Data
+  // Datos del piloto externo
   pilotName String?
-  pilotFlag String? // Country code or emoji
+  pilotFlag String?
 
   raceEventId String?
-  raceEvent   RaceEvent? @relation(fields: [raceEventId], references: [id])
+  raceEvent   RaceEvent? @relation(fields: [raceEventId], references: [id], onDelete: Cascade)
 
-  // For backward compatibility / easier querying
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
+  @@index([raceEventId])
+  @@index([pilotId])
   @@map("results")
 }
 
-// --- User & Auth Models ---
+model Standing {
+  id        String   @id @default(uuid())
+  season    Int
+  // DRIVER | TEAM
+  kind      String   @default("DRIVER")
+  position  Int
+  name      String
+  flag      String?
+  team      String?
+  points    Float    @default(0)
+  wins      Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  pilotId String?
+  pilot   Pilot?  @relation(fields: [pilotId], references: [id], onDelete: SetNull)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId, season, kind])
+  @@map("standings")
+}
+
+// Registro de ejecuciones de sincronización automática
+model SyncLog {
+  id        String   @id @default(uuid())
+  source    String
+  ok        Boolean
+  message   String?
+  createdAt DateTime @default(now())
+
+  @@index([source, createdAt])
+  @@map("sync_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Usuarios y autenticación
+// ---------------------------------------------------------------------------
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?   // For Credentials provider
-  accounts      Account[]
-  sessions      Session[]
-  follows       Follow[]
+  id                String             @id @default(cuid())
+  name              String?
+  email             String?            @unique
+  emailVerified     DateTime?
+  image             String?
+  password          String?
+  accounts          Account[]
+  sessions          Session[]
+  follows           Follow[]
   pushSubscriptions PushSubscription[]
 
   createdAt DateTime @default(now())
@@ -120,18 +198,18 @@ model User {
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -159,12 +237,12 @@ model VerificationToken {
 }
 
 model Follow {
-  id      String @id @default(uuid())
-  userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   pilotId String
-  pilot   Pilot  @relation(fields: [pilotId], references: [id])
+  pilot   Pilot  @relation(fields: [pilotId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -173,12 +251,12 @@ model Follow {
 }
 
 model PushSubscription {
-  id        String   @id @default(cuid())
-  endpoint  String   @unique
-  p256dh    String
-  auth      String
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String  @id @default(cuid())
+  endpoint String  @unique
+  p256dh   String
+  auth     String
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 

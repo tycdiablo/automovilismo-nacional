@@ -1,147 +1,60 @@
 "use client";
 
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { navigation } from "./Sidebar";
-import { useEffect } from "react";
+import { SidebarContent } from "./Sidebar";
 
-interface MobileSidebarProps {
-    isOpen: boolean;
-    onClose: () => void;
-}
+export function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const pathname = usePathname();
 
-import { useSession, signOut } from "next-auth/react";
-import { LogOut, LogIn } from "lucide-react";
+  useEffect(() => {
+    onClose();
+  }, [pathname, onClose]);
 
-export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
-    const pathname = usePathname();
-    const { data: session } = useSession();
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isOpen, onClose]);
 
-    // Close sidebar when clicking a link
-    useEffect(() => {
-        onClose();
-    }, [pathname, onClose]);
-
-    // Prevent body scroll when sidebar is open
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "unset";
-        }
-        return () => {
-            document.body.style.overflow = "unset";
-        };
-    }, [isOpen]);
-
-    return (
-        <AnimatePresence>
-            {isOpen && (
-                <>
-                    {/* Backdrop */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={onClose}
-                        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden"
-                    />
-
-                    {/* Sidebar Panel */}
-                    <motion.div
-                        initial={{ x: "-100%" }}
-                        animate={{ x: 0 }}
-                        exit={{ x: "-100%" }}
-                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border p-6 shadow-xl lg:hidden flex flex-col"
-                    >
-                        <div className="flex items-center justify-between mb-8">
-                            <Link href="/" className="flex items-center gap-2" onClick={onClose}>
-                                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                                    AN
-                                </h1>
-                                <span className="text-sm font-semibold text-foreground">
-                                    Motor Nacional
-                                </span>
-                            </Link>
-                            <button
-                                onClick={onClose}
-                                className="p-2 rounded-md hover:bg-accent text-muted-foreground transition-all"
-                            >
-                                <X className="h-6 w-6" />
-                            </button>
-                        </div>
-
-                        <nav className="flex-1 space-y-2">
-                            {navigation.map((item) => {
-                                const isActive = pathname === item.href;
-                                return (
-                                    <Link
-                                        key={item.name}
-                                        href={item.href}
-                                        className={cn(
-                                            "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors",
-                                            isActive
-                                                ? "bg-primary/10 text-primary"
-                                                : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                                        )}
-                                    >
-                                        <item.icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-muted-foreground")} />
-                                        {item.name}
-                                    </Link>
-                                );
-                            })}
-                        </nav>
-
-                        <div className="pt-6 border-t border-border mt-auto">
-                            {session ? (
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                                            {session.user?.name?.[0].toUpperCase() || "U"}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-foreground truncate">{session.user?.name}</p>
-                                            <p className="text-xs text-muted-foreground truncate">{session.user?.email}</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            signOut();
-                                            onClose();
-                                        }}
-                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 border border-border rounded-lg transition-all"
-                                    >
-                                        <LogOut className="h-4 w-4" />
-                                        Cerrar sesión
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    <Link
-                                        href="/login"
-                                        onClick={onClose}
-                                        className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-primary text-primary-foreground text-sm font-bold rounded-lg hover:bg-primary/90 transition-all shadow-md shadow-primary/10"
-                                    >
-                                        <LogIn className="h-4 w-4" />
-                                        Ingresar a mi cuenta
-                                    </Link>
-                                    <Link
-                                        href="/registro"
-                                        onClick={onClose}
-                                        className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all"
-                                    >
-                                        ¿No tienes cuenta? Regístrate
-                                    </Link>
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
-                </>
-            )}
-        </AnimatePresence>
-    );
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden"
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú"
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 260 }}
+            className="fixed inset-y-0 left-0 z-50 w-72 border-r border-border bg-card shadow-2xl lg:hidden"
+          >
+            <button
+              onClick={onClose}
+              className="absolute right-3 top-3.5 rounded-md p-2 text-muted-foreground hover:bg-accent"
+              aria-label="Cerrar menú"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <SidebarContent onNavigate={onClose} />
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
 }

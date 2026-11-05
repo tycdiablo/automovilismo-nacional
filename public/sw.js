@@ -1,26 +1,34 @@
-self.addEventListener('push', function (event) {
-    if (event.data) {
-        const data = event.data.json();
-        const options = {
-            body: data.body,
-            icon: '/icon-192x192.png', // We should add this icon eventually
-            badge: '/badge-72x72.png',
-            data: {
-                url: data.url
-            }
-        };
+/* Service worker de Motor Nacional: notificaciones push */
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
-        event.waitUntil(
-            self.registration.showNotification(data.title, options)
-        );
-    }
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+  let data;
+  try {
+    data = event.data.json();
+  } catch {
+    data = { title: "Motor Nacional", body: event.data.text() };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Motor Nacional", {
+      body: data.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/badge-72.png",
+      data: { url: data.url || "/" },
+    })
+  );
 });
 
-self.addEventListener('notificationclick', function (event) {
-    event.notification.close();
-    if (event.notification.data && event.notification.data.url) {
-        event.waitUntil(
-            clients.openWindow(event.notification.data.url)
-        );
-    }
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (client.url === url && "focus" in client) return client.focus();
+      }
+      return self.clients.openWindow(url);
+    })
+  );
 });

@@ -1,109 +1,69 @@
-"use client";
+import Link from "next/link";
+import { Globe2 } from "lucide-react";
+import { CategoryBadge } from "@/components/ui";
+import { initials } from "@/lib/utils";
+import { FollowButton } from "./FollowButton";
 
-import { UserPlus, UserCheck } from "lucide-react";
-import { useState, useEffect } from "react";
-import Image from "next/image";
+export type PilotCardData = {
+  id: string;
+  slug: string;
+  fullName: string;
+  team: string | null;
+  carNumber: number | null;
+  profileImageUrl: string | null;
+  category: { shortName: string; name: string; slug?: string | null; color?: string | null; isInternational: boolean };
+  _count?: { followers: number };
+};
 
-interface PilotCardProps {
-    pilot: {
-        id: string;
-        name: string;
-        category: string;
-        team: string;
-        nationality: string;
-        imageUrl: string;
-        isInternational: boolean;
-    };
-}
-
-export function PilotCard({ pilot }: PilotCardProps) {
-    const [isFollowing, setIsFollowing] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-
-    // Sync with localStorage since we don't have full auth yet
-    useEffect(() => {
-        const stored = localStorage.getItem(`follow_${pilot.id}`);
-        if (stored === 'true') setIsFollowing(true);
-    }, [pilot.id]);
-
-    const handleFollow = async () => {
-        const newStatus = !isFollowing;
-        setIsFollowing(newStatus);
-        setIsLoading(true);
-        try {
-            const response = await fetch(`/api/pilotos/${pilot.id}/follow`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ following: newStatus })
-            });
-            if (response.ok) {
-                localStorage.setItem(`follow_${pilot.id}`, newStatus ? 'true' : 'false');
-            } else {
-                throw new Error("Failed to update follow status");
-            }
-        } catch (e) {
-            console.error("Error following:", e);
-            setIsFollowing(!newStatus); // Rollback
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow">
-            <div className="aspect-square bg-muted relative overflow-hidden flex items-center justify-center">
-                <div className="text-3xl font-bold text-muted-foreground/40 select-none">
-                    {pilot.name.split(' ').map(n => n[0]).join('')}
-                </div>
-
-                {pilot.imageUrl && pilot.imageUrl !== "/placeholder.svg" && (
-                    <Image
-                        src={pilot.imageUrl}
-                        alt={pilot.name}
-                        fill
-                        className="object-cover transition-transform group-hover:scale-105"
-                        unoptimized
-                    />
-                )}
-
-                {pilot.isInternational && (
-                    <span className="absolute top-2 right-2 inline-flex items-center rounded-full bg-primary/90 px-2 py-1 text-xs font-medium text-primary-foreground shadow-sm backdrop-blur-sm z-10">
-                        Internacional
-                    </span>
-                )}
-            </div>
-
-            <div className="flex flex-1 flex-col p-4">
-                <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {pilot.name}
-                </h3>
-                <p className="text-sm text-muted-foreground">{pilot.category}</p>
-                <p className="text-xs text-muted-foreground mt-1">{pilot.team}</p>
-
-                <div className="mt-4 flex items-center justify-between">
-                    <button
-                        onClick={handleFollow}
-                        disabled={isLoading}
-                        className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border h-9 px-4 py-2 w-full gap-2 ${isFollowing
-                            ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
-                            : 'border-input bg-background hover:bg-accent hover:text-accent-foreground'
-                            }`}>
-                        {isLoading ? (
-                            <span className="animate-pulse">...</span>
-                        ) : isFollowing ? (
-                            <>
-                                <UserCheck className="h-4 w-4" />
-                                Siguiendo
-                            </>
-                        ) : (
-                            <>
-                                <UserPlus className="h-4 w-4" />
-                                Seguir
-                            </>
-                        )}
-                    </button>
-                </div>
-            </div>
+export function PilotCard({ pilot, isFollowing }: { pilot: PilotCardData; isFollowing: boolean }) {
+  const color = pilot.category.color || "#75AADB";
+  return (
+    <article className="card group relative flex flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg">
+      <div
+        className="relative aspect-[4/3] overflow-hidden"
+        style={{ background: `linear-gradient(135deg, ${color}33, transparent 70%), var(--muted)` }}
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="font-display text-6xl font-extrabold text-foreground/15">{initials(pilot.fullName)}</span>
         </div>
-    );
+        {pilot.profileImageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={pilot.profileImageUrl}
+            alt={pilot.fullName}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+          />
+        )}
+        {pilot.carNumber !== null && (
+          <span className="font-display absolute bottom-2 right-3 text-4xl font-extrabold italic text-white/90 drop-shadow-[0_2px_6px_rgba(0,0,0,.6)]">
+            #{pilot.carNumber}
+          </span>
+        )}
+        {pilot.category.isInternational && (
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-1 text-[11px] font-semibold backdrop-blur">
+            <Globe2 className="h-3 w-3 text-primary" /> Internacional
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col p-4">
+        <CategoryBadge category={pilot.category} />
+        <h3 className="mt-2 text-lg font-bold leading-tight">
+          <Link href={`/pilotos/${pilot.slug}`} className="hover:text-primary">
+            <span className="absolute inset-0" />
+            {pilot.fullName}
+          </Link>
+        </h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">{pilot.team || pilot.category.name}</p>
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <span className="text-xs text-muted-foreground">
+            {pilot._count ? `${pilot._count.followers} seguidor${pilot._count.followers === 1 ? "" : "es"}` : ""}
+          </span>
+          <FollowButton pilotId={pilot.id} initialFollowing={isFollowing} size="sm" />
+        </div>
+      </div>
+    </article>
+  );
 }

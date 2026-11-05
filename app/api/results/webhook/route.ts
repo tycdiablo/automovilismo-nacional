@@ -1,111 +1,91 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { isAuthorizedAutomation } from "@/lib/security";
+import { notifyFollowers } from "@/lib/push";
+import { normalize } from "@/lib/utils";
 
+type IncomingResult = {
+  position: number;
+  pilotName: string;
+  pilotFlag?: string;
+  timeGap?: string;
+  points?: number;
+  team?: string;
+};
+
+/**
+ * Carga de resultados desde integraciones externas.
+ * Body: { eventName, date, categoryShortName, location?, circuit?, results: IncomingResult[] }
+ */
 export async function POST(request: NextRequest) {
-    try {
-        const authHeader = request.headers.get('Authorization');
-        const secret = process.env.WEBHOOK_SECRET;
+  if (!isAuthorizedAutomation(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-        if (!authHeader || authHeader !== `Bearer ${secret}`) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+  try {
+    const data = await request.json();
+    const { eventName, date, categoryShortName } = data;
+    const results: IncomingResult[] = Array.isArray(data.results) ? data.results : [];
 
-        const data = await request.json();
-        const { eventName, date, categoryShortName, results } = data;
-
-        if (!eventName || !categoryShortName || !results) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-        }
-
-        const category = await prisma.category.findUnique({
-            where: { shortName: categoryShortName }
-        });
-
-        if (!category) {
-            return NextResponse.json({ error: `Category ${categoryShortName} not found` }, { status: 404 });
-        }
-
-        // Create or find the RaceEvent
-        const raceEvent = await prisma.raceEvent.upsert({
-            where: {
-                // We'll use a combination of name and date for a more unique check if we had a slug, 
-                // but let's just find by name and category for now
-                id: (await prisma.raceEvent.findFirst({
-                    where: { name: eventName, categoryId: category.id }
-                }))?.id || 'new-uuid'
-            },
-            update: {
-                date: new Date(date),
-                location: data.location || null
-            },
-            create: {
-                name: eventName,
-                date: new Date(date),
-                categoryId: category.id,
-                location: data.location || null
-            }
-        });
-
-        // Delete old results for this event to refresh
-        await prisma.result.deleteMany({
-            where: { raceEventId: raceEvent.id }
-        });
-
-        // Create new results
-        for (const res of results) {
-            // Check if it matches a tracked pilot
-            const pilot = await prisma.pilot.findFirst({
-                where: {
-                    fullName: { contains: res.pilotName, mode: 'insensitive' }
-                }
-            });
-
-            await prisma.result.create({
-                data: {
-                    position: res.position,
-                    pilotName: res.pilotName,
-                    pilotFlag: res.pilotFlag || '🏁',
-                    pilotId: pilot?.id || null,
-                    raceEventId: raceEvent.id,
-                    categoryId: category.id,
-                    timeGap: res.timeGap || null,
-                    points: res.points || null
-                }
-            });
-
-            // --- PUSH NOTIFICATIONS ---
-            if (pilot?.id) {
-                const followers = await prisma.follow.findMany({
-                    where: { pilotId: pilot.id },
-                    include: {
-                        user: {
-                            include: { pushSubscriptions: true }
-                        }
-                    }
-                });
-
-                if (followers.length > 0) {
-                    const { sendPushNotification } = await import('@/lib/push');
-
-                    for (const follow of followers) {
-                        if (follow.user?.pushSubscriptions) {
-                            for (const sub of follow.user.pushSubscriptions) {
-                                await sendPushNotification(sub, {
-                                    title: `¡Resultado de ${res.pilotName}!`,
-                                    body: `Finalizó P${res.position} en ${eventName}`,
-                                    url: '/resultados'
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return NextResponse.json({ success: true, eventId: raceEvent.id });
-    } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('❌ Failed to process webhook:', message);
-        return NextResponse.json({ error: message }, { status: 500 });
+    if (!eventName || !categoryShortName || !date || results.length === 0) {
+      return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
     }
+
+    const category = await prisma.category.findUnique({ where: { shortName: categoryShortName } });
+    if (!category) {
+      return NextResponse.json({ error: `No existe la categoría ${categoryShortName}` }, { status: 404 });
+    }
+
+    const eventDate = new Date(date);
+    const existing = await prisma.raceEvent.findFirst({ where: { name: eventName, categoryId: category.id } });
+    const eventData = {
+      date: eventDate,
+      season: eventDate.getFullYear(),
+      location: data.location ?? existing?.location ?? null,
+      circuit: data.circuit ?? existing?.circuit ?? null,
+      status: "FINISHED",
+    };
+    const raceEvent = existing
+      ? await prisma.raceEvent.update({ where: { id: existing.id }, data: eventData })
+      : await prisma.raceEvent.create({ data: { ...eventData, name: eventName, categoryId: category.id } });
+
+    const pilots = await prisma.pilot.findMany({ select: { id: true, fullName: true } });
+    const findPilot = (name: string) => pilots.find((p) => normalize(p.fullName) === normalize(name));
+
+    await prisma.$transaction([
+      prisma.result.deleteMany({ where: { raceEventId: raceEvent.id } }),
+      prisma.result.createMany({
+        data: results.map((r) => ({
+          position: Number(r.position),
+          pilotName: r.pilotName,
+          pilotFlag: r.pilotFlag || "🇦🇷",
+          pilotId: findPilot(r.pilotName)?.id ?? null,
+          timeGap: r.timeGap || null,
+          points: r.points ?? null,
+          team: r.team || null,
+          raceEventId: raceEvent.id,
+          categoryId: category.id,
+        })),
+      }),
+    ]);
+
+    if (existing?.status !== "FINISHED") {
+      for (const r of results) {
+        const pilot = findPilot(r.pilotName);
+        if (pilot) {
+          await notifyFollowers([pilot.id], {
+            title: `🏁 ${pilot.fullName} terminó P${r.position}`,
+            body: eventName,
+            url: `/carreras/${raceEvent.id}`,
+          });
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true, eventId: raceEvent.id });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Results webhook error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

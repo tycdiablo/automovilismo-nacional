@@ -1,40 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Navbar } from "./Navbar";
 import { MobileSidebar } from "./MobileSidebar";
 
-interface LayoutShellProps {
-    children: React.ReactNode;
-}
+export function LayoutShell({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const close = useCallback(() => setIsMobileMenuOpen(false), []);
 
-import { PushNotificationManager } from "@/components/notifications/PushNotificationManager";
+  return (
+    <div className="flex min-h-full">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
+        <Sidebar />
+      </div>
 
-export function LayoutShell({ children }: LayoutShellProps) {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+      <MobileSidebar isOpen={isMobileMenuOpen} onClose={close} />
 
-    return (
-        <div className="flex h-full">
-            <PushNotificationManager />
-            {/* Desktop Sidebar */}
-            <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-                <Sidebar />
-            </div>
-
-            {/* Mobile Sidebar */}
-            <MobileSidebar
-                isOpen={isMobileMenuOpen}
-                onClose={() => setIsMobileMenuOpen(false)}
-            />
-
-            <div className="lg:pl-64 flex flex-col min-h-screen w-full">
-                <Navbar onOpenMenu={() => setIsMobileMenuOpen(true)} />
-
-                <main className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
-                    {children}
-                </main>
-            </div>
-        </div>
-    );
+      <div className="flex min-h-screen w-full min-w-0 flex-col lg:pl-64">
+        <Suspense fallback={<div className="h-16 border-b border-border" />}>
+          <Navbar onOpenMenu={() => setIsMobileMenuOpen(true)} />
+        </Suspense>
+        <main id="contenido" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          {children}
+        </main>
+        {footer}
+      </div>
+    </div>
+  );
 }
